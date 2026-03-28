@@ -1,0 +1,29 @@
+{
+  "name": "the-council",
+  "version": "1.0.0",
+  "description": "🧭 ROADMAP – “El Consejo” (Multi-Agente IA)\r 🎯 Caso de Uso Principal: Asistente de Desarrollo de Software\r 💡 El sistema está diseñado para codeo pero es extensible a cualquier dominio",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kevinmass/The-Council.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Kevinmass/The-Council/issues"
+  },
+  "homepage": "https://github.com/Kevinmass/The-Council#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "node-fetch": "^3.3.2",
+    "sqlite3": "^6.0.1"
+  }
+}
