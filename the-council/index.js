@@ -2,35 +2,40 @@ const app = require('./src/app');
 const config = require('./src/config');
 
 const server = app.listen(config.server.port, config.server.host, () => {
-  console.log(`🚀 El Consejo - Servidor iniciado`);
-  console.log(`📍 Escuchando en: http://${config.server.host}:${config.server.port}`);
-  console.log(`📊 Estado: ETAPA 1 - Agente único con personalidad`);
-  console.log(`🎯 Objetivo: Probar el concepto de personalidad con casos de uso de codeo`);
-  console.log(`\nEndpoints disponibles:`);
-  console.log(`  POST /api/generate - Generar respuesta con Ollama (soporta personalidades)`);
-  console.log(`  GET  /api/health     - Verificar estado del sistema`);
-  console.log(`  GET  /api/conversations/:id/history - Obtener historial`);
-  console.log(`  GET  /api/personalities - Listar personalidades disponibles`);
-  console.log(`\nPersonalidades disponibles:`);
-  console.log(`  - optimista: Enfoque positivo y constructivo`);
-  console.log(`  - pesimista: Enfoque crítico y preventivo`);
-  console.log(`  - creativo: Enfoque innovador y fuera de lo común`);
-  console.log(`  - obsesivo: Enfoque detallado y exhaustivo`);
+  console.log(`🚀 El Consejo - Multi-Agente IA`);
+  console.log(`📡 Servidor escuchando en http://${config.server.host}:${config.server.port}`);
+  console.log(`🎯 ETAPA 2 - Consejo básico (multi-agente secuencial)`);
+  console.log(`📚 Documentación: http://${config.server.host}:${config.server.port}/`);
+  console.log(`\nEndpoints clave:`);
+  console.log(`   POST /api/council - Consejo multi-agente`);
+  console.log(`   GET /api/specializations - Especializaciones disponibles`);
+  console.log(`   GET /api/personalities - Personalidades disponibles`);
+  console.log(`\nEjemplo de uso:`);
+  console.log(`   curl -X POST http://${config.server.host}:${config.server.port}/api/council \\`);
+  console.log(`     -H "Content-Type: application/json" \\`);
+  console.log(`     -d '{`);
+  console.log(`       "package": "quiero una app de delivery con drones",`);
+  console.log(`       "agents": [`);
+  console.log(`         {"personality": "optimista", "specialization": "frontend"},`);
+  console.log(`         {"personality": "pesimista", "specialization": "backend"}`);
+  console.log(`       ],`);
+  console.log(`       "rounds": 1`);
+  console.log(`     }'`);
 });
 
 // Manejo de cierre del servidor
 process.on('SIGTERM', () => {
-  console.log('SIGTERM recibido, cerrando servidor...');
+  console.log('\n🛑 SIGTERM recibido, cerrando servidor...');
   server.close(() => {
-    console.log('Servidor cerrado');
+    console.log('✅ Servidor cerrado exitosamente');
     process.exit(0);
   });
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT recibido, cerrando servidor...');
+  console.log('\n🛑 SIGINT recibido, cerrando servidor...');
   server.close(() => {
-    console.log('Servidor cerrado');
+    console.log('✅ Servidor cerrado exitosamente');
     process.exit(0);
   });
 });

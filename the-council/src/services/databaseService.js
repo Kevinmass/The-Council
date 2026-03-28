@@ -42,6 +42,7 @@ class DatabaseService {
         role TEXT NOT NULL,
         content TEXT NOT NULL,
         agent_type TEXT,
+        metadata TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (conversation_id) REFERENCES conversations (id)
       )
@@ -76,11 +77,11 @@ class DatabaseService {
     });
   }
 
-  async saveMessage(conversationId, role, content, agentType = null) {
+  async saveMessage(conversationId, role, content, agentType = null, metadata = null) {
     return new Promise((resolve, reject) => {
       this.db.run(
-        'INSERT INTO messages (conversation_id, role, content, agent_type) VALUES (?, ?, ?, ?)',
-        [conversationId, role, content, agentType],
+        'INSERT INTO messages (conversation_id, role, content, agent_type, metadata) VALUES (?, ?, ?, ?, ?)',
+        [conversationId, role, content, agentType, JSON.stringify(metadata)],
         function(err) {
           if (err) {
             reject(err);
@@ -95,7 +96,7 @@ class DatabaseService {
   async getConversationHistory(conversationId, limit = 50) {
     return new Promise((resolve, reject) => {
       this.db.all(
-        `SELECT role, content, agent_type, created_at 
+        `SELECT role, content, agent_type, metadata, created_at 
          FROM messages 
          WHERE conversation_id = ? 
          ORDER BY created_at ASC 
@@ -105,7 +106,12 @@ class DatabaseService {
           if (err) {
             reject(err);
           } else {
-            resolve(rows);
+            // Parsear metadata JSON
+            const parsedRows = rows.map(row => ({
+              ...row,
+              metadata: row.metadata ? JSON.parse(row.metadata) : null
+            }));
+            resolve(parsedRows);
           }
         }
       );
