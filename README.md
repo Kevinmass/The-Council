@@ -93,10 +93,10 @@ B responde a A (considerando su especialidad)
 
 ✔️ Hay interacción real (no respuestas aisladas)
 
-🟡 ETAPA 3 — Sistema de rondas
+🟡 ETAPA 3 — Sistema de rondas ✅ COMPLETADA
 🎯 Objetivo
 
-Implementar tu concepto clave: rondas
+Implementar el concepto clave: rondas donde cada agente habla 1 vez por ronda durante N rondas
 
 ⚙️ Features
 
@@ -108,12 +108,47 @@ Loop:
 
 for round in N:
   cada agente habla 1 vez
+  contexto se acumula entre rondas
+
+🔧 Implementación
+
+- Nuevo método `executeRounds()` en AgentService
+- Validación de parámetro rounds (debe ser >= 1)
+- Contexto acumulado entre rondas
+- Registro detallado en base de datos por ronda
+- Respuestas estructuradas por rondas
+
 🧪 Test
 Rounds = 2
 Cada agente responde 2 veces
+Contexto se mantiene entre rondas
 ✅ Éxito
 
 ✔️ Se respeta la estructura de rondas
+✔️ Cada agente responde exactamente 1 vez por ronda
+✔️ El parámetro "rounds = N" controla el número de rondas
+✔️ El contexto se acumula y se pasa entre rondas
+✔️ Sistema maneja correctamente múltiples rondas (1, 2, 3+)
+
+🚀 Endpoint Actualizado
+
+POST /api/council
+{
+  "package": "input del usuario",
+  "agents": [
+    {"personality": "optimista", "specialization": "frontend"},
+    {"personality": "pesimista", "specialization": "backend"}
+  ],
+  "rounds": 3
+}
+
+📋 Ejemplo de Flujo
+
+Ronda 1: Agente 1 → Agente 2
+Ronda 2: Agente 1 → Agente 2  
+Ronda 3: Agente 1 → Agente 2
+
+Cada agente responde exactamente 3 veces (una por ronda)
 
 🟡 ETAPA 4 — Memoria compartida
 🎯 Objetivo

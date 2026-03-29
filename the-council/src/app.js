@@ -29,8 +29,8 @@ app.get('/', (req, res) => {
       'GET /api/hello': 'Saludo rápido con personalidad predefinida (optimista)'
     },
     roadmap: {
-      etapa: 'ETAPA 2 - Consejo básico (multi-agente secuencial)',
-      objetivo: 'Simular el "consejo" con agentes especializados'
+      etapa: 'ETAPA 3 - Sistema de Rondas',
+      objetivo: 'Implementar rondas donde cada agente habla 1 vez por ronda durante N rondas'
     },
     personalidades: [
       'optimista - Enfoque positivo y constructivo',
@@ -120,6 +120,82 @@ app.get('/api/council-test', async (req, res) => {
     }
   } catch (error) {
     console.error('Error en /api/council-test:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+});
+
+// Endpoint de prueba para rondas de Etapa 3 (exactamente 2 rondas)
+app.get('/api/council-rondas-test', async (req, res) => {
+  try {
+    const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+    
+    const councilInput = {
+      package: '¿Cómo implementarías un sistema de autenticación JWT?',
+      agents: [
+        {
+          personality: 'optimista',
+          specialization: 'frontend'
+        },
+        {
+          personality: 'pesimista', 
+          specialization: 'seguridad'
+        }
+      ],
+      rounds: 2  // Exactamente 2 rondas para probar Etapa 3
+    };
+
+    const response = await fetch('http://localhost:3000/api/council', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(councilInput)
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      // Validar que se ejecutaron exactamente 2 rondas
+      const rondasEjecutadas = data.results.length;
+      const agentesPorRonda = data.results.map(r => r.responses.length);
+      const totalRespuestas = data.results.reduce((acc, r) => acc + r.responses.length, 0);
+      
+      res.json({
+        success: true,
+        message: 'Prueba de rondas de Etapa 3 realizada exitosamente',
+        testDetails: {
+          input: councilInput.package,
+          agents: councilInput.agents,
+          roundsRequested: councilInput.rounds,
+          roundsExecuted: rondasEjecutadas,
+          agentsPerRound: agentesPorRonda,
+          totalResponses: totalRespuestas,
+          validation: {
+            correctRounds: rondasEjecutadas === 2,
+            correctResponses: totalRespuestas === 4, // 2 agentes * 2 rondas
+            consistentAgentsPerRound: agentesPorRonda.every(count => count === 2)
+          }
+        },
+        results: data.results,
+        modelsUsed: {
+          frontend: 'qwen3:4b',
+          seguridad: 'gemma3:4b'
+        },
+        etapa: 'ETAPA 3 - Sistema de Rondas',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Error en la prueba de rondas',
+        details: data.error
+      });
+    }
+  } catch (error) {
+    console.error('Error en /api/council-rondas-test:', error);
     res.status(500).json({
       success: false,
       error: 'Error interno del servidor'

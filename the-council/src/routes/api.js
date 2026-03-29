@@ -195,6 +195,15 @@ router.post('/council', async (req, res) => {
       });
     }
 
+    // Validar número de rondas
+    const roundsNum = parseInt(rounds);
+    if (isNaN(roundsNum) || roundsNum < 1) {
+      return res.status(400).json({
+        success: false,
+        error: 'El campo "rounds" debe ser un número mayor o igual a 1'
+      });
+    }
+
     // Validar agentes
     const validation = agentService.validateAgents(agents);
     if (!validation.isValid) {
@@ -224,23 +233,27 @@ router.post('/council', async (req, res) => {
       'system', 
       'Configuración del consejo',
       'council',
-      { agents: configuredAgents, rounds }
+      { agents: configuredAgents, rounds: roundsNum }
+    );
+
+    // Ejecutar sistema de rondas (ETAPA 3)
+    const roundsExecution = await agentService.executeRounds(
+      configuredAgents, 
+      packageInput, 
+      conversationId, 
+      roundsNum
     );
 
     const roundResults = [];
-    let context = '';
+    let accumulatedContext = '';
 
-    // Ejecutar rondas
-    for (let round = 1; round <= rounds; round++) {
-      const roundResponses = await agentService.executeRound(
-        configuredAgents, 
-        packageInput, 
-        conversationId, 
-        context
-      );
-
-      const roundData = {
-        round,
+    // Procesar cada ronda
+    for (const roundData of roundsExecution.rounds) {
+      const roundNumber = roundData.round;
+      const roundResponses = roundData.responses;
+      
+      const roundResult = {
+        round: roundNumber,
         responses: []
       };
 
@@ -263,11 +276,11 @@ router.post('/council', async (req, res) => {
               {
                 personality: response.agent.personality,
                 specialization: response.agent.specialization,
-                round
+                round: roundNumber
               }
             );
 
-            roundData.responses.push({
+            roundResult.responses.push({
               agent: response.agent,
               response: result.content,
               metadata: {
@@ -280,30 +293,34 @@ router.post('/council', async (req, res) => {
               }
             });
 
-            // Actualizar contexto para la próxima ronda
-            context += `\n\nAgente ${response.agent.name} (${response.agent.personality} + ${response.agent.specialization}): ${result.content}`;
+            // Actualizar contexto acumulado para la próxima ronda
+            // Incluir el input original para evitar "teléfono descompuesto"
+            accumulatedContext += `\n\n[Ronda ${roundNumber}] Input Original: ${packageInput}\n`;
+            accumulatedContext += `Agente ${response.agent.name} (${response.agent.personality} + ${response.agent.specialization}): ${result.content}`;
           } else {
             throw new Error(result.error);
           }
         } catch (error) {
-          console.error(`Error procesando respuesta del agente ${response.agent.name}:`, error);
-          roundData.responses.push({
+          console.error(`Error procesando respuesta del agente ${response.agent.name} en ronda ${roundNumber}:`, error);
+          roundResult.responses.push({
             agent: response.agent,
             error: error.message
           });
         }
       }
 
-      roundResults.push(roundData);
+      roundResults.push(roundResult);
     }
 
     res.json({
       success: true,
       conversationId,
-      rounds,
+      rounds: roundsNum,
       agents: configuredAgents,
       results: roundResults,
-      context: context
+      accumulatedContext: accumulatedContext,
+      etapa: 'ETAPA 3 - Sistema de Rondas',
+      message: `Consejo completado: ${configuredAgents.length} agentes, ${roundsNum} rondas`
     });
 
   } catch (error) {
