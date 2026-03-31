@@ -1,10 +1,12 @@
 const PersonalityService = require('./personalityService');
 const DatabaseService = require('./databaseService');
+const MultiModelOllamaService = require('./multiModelOllamaService');
 
 class AgentService {
   constructor() {
     this.personalityService = new PersonalityService();
     this.dbService = new DatabaseService();
+    this.multiModelOllamaService = new MultiModelOllamaService();
     
     // Definición de especializaciones técnicas
     this.specializations = {
@@ -294,6 +296,189 @@ class AgentService {
       errors,
       warnings
     };
+  }
+
+  /**
+   * Genera el prompt para la IA síntesis final
+   * @param {string} originalInput - Input original del usuario
+   * @param {Array} allRoundResults - Resultados de todas las rondas
+   * @returns {string} Prompt para la síntesis
+   */
+  generateSynthesisPrompt(originalInput, allRoundResults) {
+    let prompt = '';
+    
+    // Contexto de la síntesis
+    prompt += `Contexto de la Síntesis Final:\n`;
+    prompt += `Eres un agente neutral y analítico especializado en síntesis de información.\n`;
+    prompt += `Tu tarea es analizar de manera objetiva todas las respuestas previas de los agentes\n`;
+    prompt += `y generar una conclusión práctica y accionable.\n\n`;
+    
+    // Input original
+    prompt += `Input Original del Usuario:\n${originalInput}\n\n`;
+    
+    // Resultados de todas las rondas
+    prompt += `=== RESULTADOS DE TODAS LAS RONDAS ===\n\n`;
+    
+    allRoundResults.forEach((round, roundIndex) => {
+      prompt += `Ronda ${round.round}:\n`;
+      round.responses.forEach((response, agentIndex) => {
+        if (response.error) {
+          prompt += `  Agente ${agentIndex + 1} (${response.agent.name}): ERROR - ${response.error}\n`;
+        } else {
+          prompt += `  Agente ${agentIndex + 1} (${response.agent.name}):\n`;
+          prompt += `    Personalidad: ${response.agent.personality}\n`;
+          prompt += `    Especialización: ${response.agent.specialization}\n`;
+          prompt += `    Respuesta: ${response.response}\n`;
+        }
+      });
+      prompt += `\n`;
+    });
+    
+    // Instrucciones para la síntesis
+    prompt += `=== INSTRUCCIONES PARA LA SÍNTESIS ===\n\n`;
+    prompt += `Basado en todas las respuestas anteriores, debes generar:\n\n`;
+    prompt += `1. RESUMEN GENERAL: Un resumen conciso de las ideas principales discutidas\n`;
+    prompt += `2. PUNTOS CLAVE: Identifica los 3-5 puntos más importantes o relevantes\n`;
+    prompt += `3. ACUERDOS Y DESACUERDOS: Qué aspectos coinciden los agentes y en qué difieren\n`;
+    prompt += `4. RECOMENDACIONES PRÁCTICAS: Propuestas concretas y accionables\n`;
+    prompt += `5. PLAN DE ACCIÓN: Pasos específicos que se podrían seguir\n\n`;
+    prompt += `Formato de salida:\n`;
+    prompt += `- Resumen: [texto]\n`;
+    prompt += `- Puntos clave: [lista numerada]\n`;
+    prompt += `- Acuerdos/Desacuerdos: [texto]\n`;
+    prompt += `- Recomendaciones: [lista numerada]\n`;
+    prompt += `- Plan de acción: [lista numerada paso a paso]\n\n`;
+    prompt += `Sé objetivo, estructurado y enfócate en proporcionar conclusiones útiles y prácticas.`;
+    
+    return prompt;
+  }
+
+  /**
+   * Ejecuta la IA síntesis final después de todas las rondas
+   * @param {string} originalInput - Input original del usuario
+   * @param {Array} allRoundResults - Resultados de todas las rondas
+   * @param {number} conversationId - ID de la conversación
+   * @returns {Promise<Object>} Resultado de la síntesis
+   */
+  async executeSynthesis(originalInput, allRoundResults, conversationId) {
+    try {
+      // Generar prompt de síntesis
+      const synthesisPrompt = this.generateSynthesisPrompt(originalInput, allRoundResults);
+      
+      // Guardar inicio de la síntesis en la base de datos
+      await this.dbService.saveMessage(
+        conversationId, 
+        'system', 
+        'INICIO SÍNTESIS FINAL - Análisis de todas las rondas'
+      );
+      
+      // Guardar el prompt generado
+      await this.dbService.saveMessage(
+        conversationId, 
+        'user', 
+        synthesisPrompt, 
+        'sintetizador',
+        { type: 'synthesis', round: 'final' }
+      );
+      
+      // Ejecutar síntesis con modelo qwen3 y personalidad neutral
+      const result = await this.multiModelOllamaService.generate(
+        synthesisPrompt, 
+        'sintetizador' // Usaremos un modelo especial para síntesis
+      );
+      
+      if (result.success) {
+        // Guardar respuesta de síntesis
+        await this.dbService.saveMessage(
+          conversationId,
+          'assistant',
+          result.content,
+          'sintetizador',
+          {
+            personality: 'neutral',
+            specialization: 'sintetizador',
+            type: 'synthesis'
+          }
+        );
+
+        // Parsear la respuesta para extraer la estructura
+        const parsedSynthesis = this.parseSynthesisResponse(result.content);
+
+        return {
+          success: true,
+          summary: parsedSynthesis.summary,
+          keyPoints: parsedSynthesis.keyPoints,
+          agreementsDisagreements: parsedSynthesis.agreementsDisagreements,
+          recommendations: parsedSynthesis.recommendations,
+          actionPlan: parsedSynthesis.actionPlan,
+          fullResponse: result.content,
+          model: result.model,
+          metadata: {
+            total_duration: result.total_duration,
+            load_duration: result.load_duration,
+            prompt_eval_count: result.prompt_eval_count,
+            eval_count: result.eval_count,
+            eval_duration: result.eval_duration
+          }
+        };
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Error en la síntesis final:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Parsea la respuesta de síntesis para extraer la estructura
+   * @param {string} response - Respuesta completa de la IA
+   * @returns {Object} Resultado parseado
+   */
+  parseSynthesisResponse(response) {
+    const lines = response.split('\n');
+    let currentSection = '';
+    const result = {
+      summary: '',
+      keyPoints: [],
+      agreementsDisagreements: '',
+      recommendations: [],
+      actionPlan: []
+    };
+
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      
+      if (trimmedLine.startsWith('Resumen:')) {
+        currentSection = 'summary';
+        result.summary = trimmedLine.replace('Resumen:', '').trim();
+      } else if (trimmedLine.startsWith('Puntos clave:')) {
+        currentSection = 'keyPoints';
+      } else if (trimmedLine.startsWith('Acuerdos/Desacuerdos:')) {
+        currentSection = 'agreementsDisagreements';
+      } else if (trimmedLine.startsWith('Recomendaciones:')) {
+        currentSection = 'recommendations';
+      } else if (trimmedLine.startsWith('Plan de acción:')) {
+        currentSection = 'actionPlan';
+      } else if (trimmedLine.match(/^\d+\./)) {
+        // Líneas numeradas
+        const content = trimmedLine.replace(/^\d+\.\s*/, '').trim();
+        if (currentSection === 'keyPoints') {
+          result.keyPoints.push(content);
+        } else if (currentSection === 'recommendations') {
+          result.recommendations.push(content);
+        } else if (currentSection === 'actionPlan') {
+          result.actionPlan.push(content);
+        }
+      } else if (trimmedLine && currentSection === 'agreementsDisagreements') {
+        result.agreementsDisagreements += (result.agreementsDisagreements ? ' ' : '') + trimmedLine;
+      }
+    }
+
+    return result;
   }
 }
 

@@ -8,7 +8,8 @@ class MultiModelOllamaService {
       frontend: 'qwen3:4b',  // Modelo para frontend
       backend: 'gemma3:4b',  // Modelo para backend
       devops: 'qwen3:4b',    // Modelo para devops
-      seguridad: 'gemma3:4b' // Modelo para seguridad
+      seguridad: 'gemma3:4b', // Modelo para seguridad
+      sintetizador: 'qwen3:4b' // Modelo para síntesis final
     };
   }
 

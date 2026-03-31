@@ -109,6 +109,8 @@ app.get('/api/council-test', async (req, res) => {
           frontend: 'qwen3:4b',
           backend: 'gemma3:4b'
         },
+        // 🚀 INCLUIR SÍNTESIS FINAL (ETAPA 4)
+        synthesis: data.synthesis || null,
         timestamp: new Date().toISOString()
       });
     } else {
@@ -133,7 +135,7 @@ app.get('/api/council-rondas-test', async (req, res) => {
     const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
     
     const councilInput = {
-      package: '¿Cómo implementarías un sistema de autenticación JWT?',
+      package: '¿Cuál es tu clima preferido?',
       agents: [
         {
           personality: 'optimista',
@@ -185,6 +187,8 @@ app.get('/api/council-rondas-test', async (req, res) => {
           seguridad: 'gemma3:4b'
         },
         etapa: 'ETAPA 3 - Sistema de Rondas',
+        // 🚀 INCLUIR SÍNTESIS FINAL (ETAPA 4)
+        synthesis: data.synthesis || null,
         timestamp: new Date().toISOString()
       });
     } else {

@@ -22,6 +22,11 @@ class PersonalityService {
         name: 'obsesivo',
         description: 'Enfoque detallado y exhaustivo',
         prompt: 'Eres un agente obsesivo que considera todos los detalles, edge cases y aspectos técnicos. No dejas nada al azar y analizas cada posible escenario con minuciosidad.'
+      },
+      neutral: {
+        name: 'neutral',
+        description: 'Enfoque analítico y objetivo para síntesis',
+        prompt: 'Eres un agente neutral y analítico especializado en síntesis de información. Tu tarea es analizar de manera objetiva todas las respuestas previas, identificar puntos clave, acuerdos, desacuerdos y generar conclusiones prácticas. Sé objetivo, estructurado y enfócate en proporcionar recomendaciones accionables basadas en el análisis de todas las ideas presentadas.'
       }
     };
   }

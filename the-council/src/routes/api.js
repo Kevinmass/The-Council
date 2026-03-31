@@ -312,16 +312,46 @@ router.post('/council', async (req, res) => {
       roundResults.push(roundResult);
     }
 
-    res.json({
+    // 🚀 ETAPA 4 - SÍNTESIS FINAL
+    console.log('[ETAPA 4] Ejecutando síntesis final...');
+    
+    const synthesisResult = await agentService.executeSynthesis(
+      packageInput,
+      roundResults,
+      conversationId
+    );
+
+    // Preparar respuesta final con síntesis
+    const finalResponse = {
       success: true,
       conversationId,
       rounds: roundsNum,
       agents: configuredAgents,
       results: roundResults,
       accumulatedContext: accumulatedContext,
-      etapa: 'ETAPA 3 - Sistema de Rondas',
-      message: `Consejo completado: ${configuredAgents.length} agentes, ${roundsNum} rondas`
-    });
+      synthesis: {
+        enabled: true,
+        summary: synthesisResult.summary || 'No disponible',
+        keyPoints: synthesisResult.keyPoints || [],
+        agreementsDisagreements: synthesisResult.agreementsDisagreements || 'No disponible',
+        recommendations: synthesisResult.recommendations || [],
+        actionPlan: synthesisResult.actionPlan || [],
+        fullResponse: synthesisResult.fullResponse || 'No disponible',
+        model: synthesisResult.model || 'qwen3:4b',
+        personality: 'neutral',
+        metadata: synthesisResult.metadata || {}
+      },
+      etapa: 'ETAPA 4 - Síntesis Final',
+      message: `Consejo completado: ${configuredAgents.length} agentes, ${roundsNum} rondas + síntesis final`
+    };
+
+    // Si hubo error en la síntesis, incluirlo en la respuesta
+    if (!synthesisResult.success) {
+      finalResponse.synthesis.error = synthesisResult.error;
+      finalResponse.message += ` (Error en síntesis: ${synthesisResult.error})`;
+    }
+
+    res.json(finalResponse);
 
   } catch (error) {
     console.error('Error en /api/council:', error);
