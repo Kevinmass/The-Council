@@ -29,8 +29,8 @@ app.get('/', (req, res) => {
       'GET /api/hello': 'Saludo rápido con personalidad predefinida (optimista)'
     },
     roadmap: {
-      etapa: 'ETAPA 3 - Sistema de Rondas',
-      objetivo: 'Implementar rondas donde cada agente habla 1 vez por ronda durante N rondas'
+      etapa: 'ETAPA 4 - Síntesis Final',
+      objetivo: 'Generar una conclusión estructurada después de todas las rondas del consejo'
     },
     personalidades: [
       'optimista - Enfoque positivo y constructivo',
@@ -42,7 +42,8 @@ app.get('/', (req, res) => {
       'frontend - UI/UX, frameworks, interfaces de usuario',
       'backend - APIs, bases de datos, arquitectura',
       'devops - Deploy, CI/CD, performance, infraestructura',
-      'seguridad - Best practices, vulnerabilidades, seguridad'
+      'seguridad - Best practices, vulnerabilidades, seguridad',
+      'sintetizador - Análisis objetivo y síntesis de información'
     ],
     ejemplo_consejo: {
       input: 'quiero una app de delivery con drones',

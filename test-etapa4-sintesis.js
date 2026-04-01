@@ -76,13 +76,26 @@ async function testEtapa4Sintesis() {
           console.log(`   🚀 SÍNTESIS FINAL ACTIVADA!`);
           console.log(`      - Modelo: ${data.synthesis.model}`);
           console.log(`      - Personalidad: ${data.synthesis.personality}`);
-          console.log(`      - Resumen: ${data.synthesis.summary ? '✅ Disponible' : '❌ No disponible'}`);
+          console.log(`      - Resumen: ${data.synthesis.summary && data.synthesis.summary !== 'No disponible' ? '✅ Disponible' : '❌ No disponible'}`);
           console.log(`      - Puntos clave: ${data.synthesis.keyPoints.length} encontrados`);
           console.log(`      - Recomendaciones: ${data.synthesis.recommendations.length} encontradas`);
           console.log(`      - Plan de acción: ${data.synthesis.actionPlan.length} pasos`);
           
+          // Mostrar calidad de la síntesis
+          if (data.synthesis.quality) {
+            const quality = data.synthesis.quality;
+            console.log(`      - Calidad: ${quality.score}/100 ${quality.score >= 60 ? '✅' : '⚠️'}`);
+            if (quality.passed !== undefined) {
+              console.log(`        Estado: ${quality.passed ? '✅ Aprobada' : '⚠️ No aprobada'}`);
+            }
+            if (quality.warnings && quality.warnings.length > 0) {
+              console.log(`        Advertencias:`);
+              quality.warnings.forEach(w => console.log(`          - ${w}`));
+            }
+          }
+          
           // Mostrar contenido de la síntesis
-          if (data.synthesis.summary) {
+          if (data.synthesis.summary && data.synthesis.summary !== 'No disponible') {
             console.log(`      - Resumen: "${data.synthesis.summary.substring(0, 100)}..."`);
           }
           if (data.synthesis.keyPoints.length > 0) {
@@ -93,6 +106,9 @@ async function testEtapa4Sintesis() {
           }
         } else {
           console.log(`   ❌ Síntesis no activada o no disponible`);
+          if (data.synthesis && data.synthesis.error) {
+            console.log(`      Error: ${data.synthesis.error}`);
+          }
         }
 
         // Mostrar resumen de respuestas por ronda

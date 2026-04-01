@@ -29,6 +29,11 @@ class AgentService {
         name: 'seguridad',
         description: 'Best practices, vulnerabilidades, seguridad',
         prompt: 'Eres un experto en seguridad informática. Especializado en buenas prácticas, identificación de vulnerabilidades y seguridad en desarrollo.'
+      },
+      sintetizador: {
+        name: 'sintetizador',
+        description: 'Análisis objetivo y síntesis de información',
+        prompt: 'Eres un analista neutral especializado en sintetizar información de múltiples fuentes. Tu rol es identificar patrones, acuerdos, desacuerdos y generar conclusiones prácticas y accionables.'
       }
     };
   }
@@ -334,21 +339,33 @@ class AgentService {
       prompt += `\n`;
     });
     
-    // Instrucciones para la síntesis
+    // Instrucciones para la síntesis - FORMATO ESTRICTO REQUERIDO
     prompt += `=== INSTRUCCIONES PARA LA SÍNTESIS ===\n\n`;
     prompt += `Basado en todas las respuestas anteriores, debes generar:\n\n`;
-    prompt += `1. RESUMEN GENERAL: Un resumen conciso de las ideas principales discutidas\n`;
+    prompt += `1. RESUMEN GENERAL: Un resumen conciso de las ideas principales discutidas (2-3 oraciones)\n`;
     prompt += `2. PUNTOS CLAVE: Identifica los 3-5 puntos más importantes o relevantes\n`;
     prompt += `3. ACUERDOS Y DESACUERDOS: Qué aspectos coinciden los agentes y en qué difieren\n`;
-    prompt += `4. RECOMENDACIONES PRÁCTICAS: Propuestas concretas y accionables\n`;
-    prompt += `5. PLAN DE ACCIÓN: Pasos específicos que se podrían seguir\n\n`;
-    prompt += `Formato de salida:\n`;
-    prompt += `- Resumen: [texto]\n`;
-    prompt += `- Puntos clave: [lista numerada]\n`;
-    prompt += `- Acuerdos/Desacuerdos: [texto]\n`;
-    prompt += `- Recomendaciones: [lista numerada]\n`;
-    prompt += `- Plan de acción: [lista numerada paso a paso]\n\n`;
-    prompt += `Sé objetivo, estructurado y enfócate en proporcionar conclusiones útiles y prácticas.`;
+    prompt += `4. RECOMENDACIONES PRÁCTICAS: Propuestas concretas y accionables (2-4 recomendaciones)\n`;
+    prompt += `5. PLAN DE ACCIÓN: Pasos específicos que se podrían seguir (3-5 pasos)\n\n`;
+    prompt += `=== FORMATO DE SALIDA OBLIGATORIO ===\n`;
+    prompt += `DEBES usar EXACTAMENTE este formato, sin desviaciones:\n\n`;
+    prompt += `Resumen: [tu resumen aquí]\n\n`;
+    prompt += `Puntos clave:\n`;
+    prompt += `1. [primer punto clave]\n`;
+    prompt += `2. [segundo punto clave]\n`;
+    prompt += `3. [tercer punto clave]\n`;
+    prompt += `[agrega más si es necesario]\n\n`;
+    prompt += `Acuerdos/Desacuerdos: [tu análisis aquí]\n\n`;
+    prompt += `Recomendaciones:\n`;
+    prompt += `1. [primera recomendación]\n`;
+    prompt += `2. [segunda recomendación]\n`;
+    prompt += `[agrega más si es necesario]\n\n`;
+    prompt += `Plan de acción:\n`;
+    prompt += `1. [primer paso]\n`;
+    prompt += `2. [segundo paso]\n`;
+    prompt += `3. [tercer paso]\n`;
+    prompt += `[agrega más si es necesario]\n\n`;
+    prompt += `IMPORTANTE: Respeta estrictamente el formato. Cada sección debe comenzar con su título exacto seguido de dos puntos. Las listas deben usar numeración (1., 2., 3., etc.).`;
     
     return prompt;
   }
@@ -436,7 +453,7 @@ class AgentService {
   /**
    * Parsea la respuesta de síntesis para extraer la estructura
    * @param {string} response - Respuesta completa de la IA
-   * @returns {Object} Resultado parseado
+   * @returns {Object} Resultado parseado con métricas de calidad
    */
   parseSynthesisResponse(response) {
     const lines = response.split('\n');
@@ -446,39 +463,150 @@ class AgentService {
       keyPoints: [],
       agreementsDisagreements: '',
       recommendations: [],
-      actionPlan: []
+      actionPlan: [],
+      parseQuality: {
+        score: 0,
+        sectionsFound: 0,
+        totalSections: 5,
+        warnings: []
+      }
     };
+
+    // Patrones regex más flexibles para capturar variaciones
+    const sectionPatterns = {
+      summary: [/^Resumen:\s*/i, /^RESUMEN:\s*/i, /^##\s*Resumen/i, /^1\.?\s*Resumen/i],
+      keyPoints: [/^Puntos clave:/i, /^PUNTOS CLAVE:/i, /^##\s*Puntos/i, /^2\.?\s*Puntos/i, /^Puntos:/i],
+      agreementsDisagreements: [/^Acuerdos\/Desacuerdos:/i, /^ACUERDOS\/DESACUERDOS:/i, /^Acuerdos y desacuerdos:/i, /^##\s*Acuerdos/i, /^3\.?\s*Acuerdos/i],
+      recommendations: [/^Recomendaciones:/i, /^RECOMENDACIONES:/i, /^##\s*Recomendaciones/i, /^4\.?\s*Recomendaciones/i, /^Recomendaciones prácticas:/i],
+      actionPlan: [/^Plan de acción:/i, /^PLAN DE ACCIÓN:/i, /^Plan de accion:/i, /^##\s*Plan/i, /^5\.?\s*Plan/i]
+    };
+
+    // Mapeo inverso para saber en qué sección estamos
+    const sectionNames = ['summary', 'keyPoints', 'agreementsDisagreements', 'recommendations', 'actionPlan'];
+    const sectionsFound = new Set();
 
     for (const line of lines) {
       const trimmedLine = line.trim();
       
-      if (trimmedLine.startsWith('Resumen:')) {
-        currentSection = 'summary';
-        result.summary = trimmedLine.replace('Resumen:', '').trim();
-      } else if (trimmedLine.startsWith('Puntos clave:')) {
-        currentSection = 'keyPoints';
-      } else if (trimmedLine.startsWith('Acuerdos/Desacuerdos:')) {
-        currentSection = 'agreementsDisagreements';
-      } else if (trimmedLine.startsWith('Recomendaciones:')) {
-        currentSection = 'recommendations';
-      } else if (trimmedLine.startsWith('Plan de acción:')) {
-        currentSection = 'actionPlan';
-      } else if (trimmedLine.match(/^\d+\./)) {
-        // Líneas numeradas
-        const content = trimmedLine.replace(/^\d+\.\s*/, '').trim();
-        if (currentSection === 'keyPoints') {
-          result.keyPoints.push(content);
-        } else if (currentSection === 'recommendations') {
-          result.recommendations.push(content);
-        } else if (currentSection === 'actionPlan') {
-          result.actionPlan.push(content);
+      // Verificar si es el inicio de una nueva sección
+      let sectionMatched = false;
+      for (const [sectionName, patterns] of Object.entries(sectionPatterns)) {
+        for (const pattern of patterns) {
+          if (pattern.test(trimmedLine)) {
+            currentSection = sectionName;
+            sectionsFound.add(sectionName);
+            sectionMatched = true;
+            
+            // Extraer contenido si está en la misma línea (para Resumen)
+            if (sectionName === 'summary') {
+              const content = trimmedLine.replace(pattern, '').trim();
+              if (content) {
+                result.summary = content;
+              }
+            }
+            break;
+          }
         }
-      } else if (trimmedLine && currentSection === 'agreementsDisagreements') {
-        result.agreementsDisagreements += (result.agreementsDisagreements ? ' ' : '') + trimmedLine;
+        if (sectionMatched) break;
+      }
+
+      // Si no es inicio de sección, procesar contenido
+      if (!sectionMatched) {
+        // Líneas numeradas (1., 2., 3., etc.)
+        const numberedMatch = trimmedLine.match(/^\d+\.\s+(.+)/);
+        if (numberedMatch && currentSection) {
+          const content = numberedMatch[1].trim();
+          if (currentSection === 'keyPoints') {
+            result.keyPoints.push(content);
+          } else if (currentSection === 'recommendations') {
+            result.recommendations.push(content);
+          } else if (currentSection === 'actionPlan') {
+            result.actionPlan.push(content);
+          }
+        } 
+        // Líneas con guiones (-) también pueden ser listas
+        else if (trimmedLine.startsWith('- ') && currentSection) {
+          const content = trimmedLine.substring(2).trim();
+          if (currentSection === 'keyPoints') {
+            result.keyPoints.push(content);
+          } else if (currentSection === 'recommendations') {
+            result.recommendations.push(content);
+          } else if (currentSection === 'actionPlan') {
+            result.actionPlan.push(content);
+          }
+        }
+        // Contenido continuo para Acuerdos/Desacuerdos
+        else if (trimmedLine && currentSection === 'agreementsDisagreements' && !trimmedLine.startsWith('#') && !trimmedLine.startsWith('=')) {
+          result.agreementsDisagreements += (result.agreementsDisagreements ? ' ' : '') + trimmedLine;
+        }
       }
     }
 
+    // Calcular métricas de calidad
+    result.parseQuality.sectionsFound = sectionsFound.size;
+    let qualityScore = 0;
+    
+    // Ponderar secciones por importancia
+    if (result.summary) qualityScore += 20;
+    if (result.keyPoints.length > 0) qualityScore += 25;
+    if (result.agreementsDisagreements) qualityScore += 15;
+    if (result.recommendations.length > 0) qualityScore += 20;
+    if (result.actionPlan.length > 0) qualityScore += 20;
+    
+    result.parseQuality.score = qualityScore;
+
+    // Generar advertencias
+    if (!result.summary) {
+      result.parseQuality.warnings.push('No se encontró resumen');
+    }
+    if (result.keyPoints.length === 0) {
+      result.parseQuality.warnings.push('No se encontraron puntos clave');
+    }
+    if (!result.agreementsDisagreements) {
+      result.parseQuality.warnings.push('No se encontró sección de acuerdos/desacuerdos');
+    }
+    if (result.recommendations.length === 0) {
+      result.parseQuality.warnings.push('No se encontraron recomendaciones');
+    }
+    if (result.actionPlan.length === 0) {
+      result.parseQuality.warnings.push('No se encontró plan de acción');
+    }
+
     return result;
+  }
+
+  /**
+   * Valida la calidad de una síntesis parseada
+   * @param {Object} parsedSynthesis - Resultado del parseo
+   * @returns {Object} Validación con recomendaciones
+   */
+  validateSynthesisQuality(parsedSynthesis) {
+    const validation = {
+      passed: false,
+      score: parsedSynthesis.parseQuality.score,
+      maxScore: 100,
+      minRequiredScore: 60,
+      warnings: parsedSynthesis.parseQuality.warnings,
+      suggestions: []
+    };
+
+    // Evaluar calidad mínima
+    if (validation.score >= validation.minRequiredScore) {
+      validation.passed = true;
+    }
+
+    // Generar sugerencias de mejora
+    if (parsedSynthesis.keyPoints.length < 3) {
+      validation.suggestions.push('Se recomiendan al menos 3 puntos clave');
+    }
+    if (parsedSynthesis.recommendations.length < 2) {
+      validation.suggestions.push('Se recomiendan al menos 2 recomendaciones');
+    }
+    if (parsedSynthesis.actionPlan.length < 3) {
+      validation.suggestions.push('Se recomiendan al menos 3 pasos en el plan de acción');
+    }
+
+    return validation;
   }
 }
 

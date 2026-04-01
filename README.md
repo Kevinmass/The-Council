@@ -150,21 +150,37 @@ Ronda 3: Agente 1 → Agente 2
 
 Cada agente responde exactamente 3 veces (una por ronda)
 
-🟡 ETAPA 4 — Memoria compartida
+🟡 ETAPA 4 — Síntesis Final ✅ IMPLEMENTADA
 🎯 Objetivo
 
-Que los agentes "recuerden"
+Generar una conclusión estructurada después de todas las rondas del consejo
 
 ⚙️ Features
-Historial completo o parcial (usando SQLite desde el inicio)
-Cada prompt incluye:
-package
-respuestas previas
+- **Síntesis automática** al finalizar todas las rondas
+- **Modelo especializado**: qwen3:4b con personalidad neutral
+- **Estructura de salida**:
+  - Resumen general (2-3 oraciones)
+  - Puntos clave (3-5 items)
+  - Acuerdos y desacuerdos entre agentes
+  - Recomendaciones prácticas (2-4 items)
+  - Plan de acción paso a paso (3-5 pasos)
+- **Sistema de calidad**: Validación automática del parseo con métricas de calidad
+- **Fallback robusto**: Manejo de errores y respuestas parciales
+- **Persistencia**: Todo se guarda en SQLite para auditoría
+
 🧪 Test
-Un agente contradice o mejora algo previo
+- Ejecutar consejo con múltiples rondas
+- Verificar que la síntesis se genera automáticamente
+- Validar estructura de la síntesis (resumen, puntos clave, etc.)
+- Verificar métricas de calidad (score >= 60 para aprobación)
 ✅ Éxito
 
-✔️ Conversación coherente (no aislada)
+✔️ La síntesis se ejecuta automáticamente al finalizar las rondas
+✔️ El formato de salida es estructurado y consistente
+✔️ El sistema de parseo maneja variaciones en el formato
+✔️ Las métricas de calidad permiten evaluar la síntesis
+✔️ El fallback garantiza que siempre haya una respuesta usable
+✔️ Persistencia completa en base de datos
 
 🟡 ETAPA 5 — Especialización de Agentes
 🎯 Objetivo

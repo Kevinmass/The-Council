@@ -315,11 +315,65 @@ router.post('/council', async (req, res) => {
     // 🚀 ETAPA 4 - SÍNTESIS FINAL
     console.log('[ETAPA 4] Ejecutando síntesis final...');
     
-    const synthesisResult = await agentService.executeSynthesis(
-      packageInput,
-      roundResults,
-      conversationId
-    );
+    let synthesisData = {
+      enabled: true,
+      summary: 'No disponible',
+      keyPoints: [],
+      agreementsDisagreements: 'No disponible',
+      recommendations: [],
+      actionPlan: [],
+      fullResponse: 'No disponible',
+      model: 'qwen3:4b',
+      personality: 'neutral',
+      metadata: {},
+      quality: { score: 0, warnings: [] }
+    };
+
+    try {
+      const synthesisResult = await agentService.executeSynthesis(
+        packageInput,
+        roundResults,
+        conversationId
+      );
+
+      if (synthesisResult.success) {
+        // Validar calidad de la síntesis
+        const parsedSynthesis = agentService.parseSynthesisResponse(synthesisResult.fullResponse);
+        const qualityValidation = agentService.validateSynthesisQuality(parsedSynthesis);
+
+        synthesisData = {
+          enabled: true,
+          summary: parsedSynthesis.summary || 'No disponible',
+          keyPoints: parsedSynthesis.keyPoints || [],
+          agreementsDisagreements: parsedSynthesis.agreementsDisagreements || 'No disponible',
+          recommendations: parsedSynthesis.recommendations || [],
+          actionPlan: parsedSynthesis.actionPlan || [],
+          fullResponse: synthesisResult.fullResponse,
+          model: synthesisResult.model || 'qwen3:4b',
+          personality: 'neutral',
+          metadata: synthesisResult.metadata || {},
+          quality: {
+            score: qualityValidation.score,
+            passed: qualityValidation.passed,
+            warnings: qualityValidation.warnings,
+            suggestions: qualityValidation.suggestions
+          }
+        };
+
+        console.log(`[ETAPA 4] Síntesis completada - Calidad: ${qualityValidation.score}/100`);
+        if (qualityValidation.warnings.length > 0) {
+          console.warn('[ETAPA 4] Advertencias de calidad:', qualityValidation.warnings);
+        }
+      } else {
+        synthesisData.error = synthesisResult.error;
+        synthesisData.enabled = false;
+        console.error('[ETAPA 4] Error en síntesis:', synthesisResult.error);
+      }
+    } catch (error) {
+      synthesisData.error = error.message;
+      synthesisData.enabled = false;
+      console.error('[ETAPA 4] Excepción en síntesis:', error);
+    }
 
     // Preparar respuesta final con síntesis
     const finalResponse = {
@@ -329,27 +383,10 @@ router.post('/council', async (req, res) => {
       agents: configuredAgents,
       results: roundResults,
       accumulatedContext: accumulatedContext,
-      synthesis: {
-        enabled: true,
-        summary: synthesisResult.summary || 'No disponible',
-        keyPoints: synthesisResult.keyPoints || [],
-        agreementsDisagreements: synthesisResult.agreementsDisagreements || 'No disponible',
-        recommendations: synthesisResult.recommendations || [],
-        actionPlan: synthesisResult.actionPlan || [],
-        fullResponse: synthesisResult.fullResponse || 'No disponible',
-        model: synthesisResult.model || 'qwen3:4b',
-        personality: 'neutral',
-        metadata: synthesisResult.metadata || {}
-      },
+      synthesis: synthesisData,
       etapa: 'ETAPA 4 - Síntesis Final',
       message: `Consejo completado: ${configuredAgents.length} agentes, ${roundsNum} rondas + síntesis final`
     };
-
-    // Si hubo error en la síntesis, incluirlo en la respuesta
-    if (!synthesisResult.success) {
-      finalResponse.synthesis.error = synthesisResult.error;
-      finalResponse.message += ` (Error en síntesis: ${synthesisResult.error})`;
-    }
 
     res.json(finalResponse);
 
