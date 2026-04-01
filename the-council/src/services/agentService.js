@@ -74,7 +74,7 @@ class AgentService {
    * @param {string} packageInput - Input del usuario
    * @param {string} personalityName - Nombre de la personalidad
    * @param {string} specializationName - Nombre de la especialización
-   * @param {string} context - Contexto de respuestas anteriores (opcional)
+   * @param {string} context - Contexto de respuestas anteriores (opcional) - incluye rondas anteriores y agentes previos en esta ronda
    * @param {string} originalInput - Input original del usuario (para evitar "teléfono descompuesto")
    * @returns {string} Prompt completo para enviar a Ollama
    */
@@ -88,7 +88,8 @@ class AgentService {
     prompt += `Contexto del Consejo de Agentes:\n`;
     prompt += `Eres parte de un consejo de agentes de IA especializados en desarrollo de software.\n`;
     prompt += `Estás colaborando con otros agentes para proporcionar una respuesta integral a un problema de desarrollo.\n`;
-    prompt += `Tu rol es aportar tu perspectiva técnica basada en tu especialización y personalidad.\n\n`;
+    prompt += `Tu rol es aportar tu perspectiva técnica basada en tu especialización y personalidad.\n`;
+    prompt += `**IMPORTANTE**: Debes leer y considerar las respuestas de los otros agentes que ya hablaron antes de dar tu opinión.\n\n`;
     
     // Añadir especialización
     if (specialization) {
@@ -105,13 +106,14 @@ class AgentService {
       prompt += `Input Original del Usuario:\n${originalInput}\n\n`;
     }
     
-    // Añadir contexto de rondas anteriores
+    // Añadir contexto de rondas anteriores y agentes previos en esta ronda
     if (context.trim()) {
-      prompt += `Contexto de Rondas Anteriores:\n${context}\n\n`;
+      prompt += `=== RESPUESTAS PREVIAS DE OTROS AGENTES (Debes considerar estas opiniones) ===\n${context}\n\n`;
+      prompt += `Basándote en lo que dijeron los agentes anteriores, ahora te toca dar tu perspectiva:\n\n`;
     }
     
     // Añadir input actual (puede ser el mismo o una continuación)
-    prompt += `Input Actual: ${packageInput}`;
+    prompt += `Tu turno de responder: ${packageInput}`;
     
     return prompt;
   }

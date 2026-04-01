@@ -11,6 +11,42 @@ class MultiModelOllamaService {
       seguridad: 'gemma3:4b', // Modelo para seguridad
       sintetizador: 'qwen3:4b' // Modelo para síntesis final
     };
+    
+    // Tracking de modelos anteriores por agente (por conversationId + agentName)
+    this.previousModels = {};
+  }
+
+  /**
+   * Obtiene el modelo anterior usado por un agente en una conversación
+   * @param {string} conversationId - ID de la conversación
+   * @param {string} agentName - Nombre del agente
+   * @returns {string|null} Modelo anterior o null si es la primera vez
+   */
+  getPreviousModel(conversationId, agentName) {
+    const key = `${conversationId}-${agentName}`;
+    return this.previousModels[key] || null;
+  }
+
+  /**
+   * Guarda el modelo usado por un agente para tracking futuro
+   * @param {string} conversationId - ID de la conversación
+   * @param {string} agentName - Nombre del agente
+   * @param {string} model - Modelo usado
+   */
+  saveModelUsage(conversationId, agentName, model) {
+    const key = `${conversationId}-${agentName}`;
+    this.previousModels[key] = model;
+  }
+
+  /**
+   * Genera identificación de modelo para agregar al final de la respuesta
+   * @param {string} currentModel - Modelo actual
+   * @param {string|null} previousModel - Modelo anterior
+   * @returns {string} String de identificación
+   */
+  generateModelIdentification(currentModel, previousModel) {
+    const previousModelStr = previousModel || 'N/A (primera ronda)';
+    return `\n\n---\n[Modelo: ${currentModel} | Anterior: ${previousModelStr}]`;
   }
 
   /**
@@ -18,6 +54,9 @@ class MultiModelOllamaService {
    * @param {string} prompt - Prompt a enviar
    * @param {string} specialization - Especialización del agente
    * @param {Object} options - Opciones adicionales
+   * @param {string} options.conversationId - ID de la conversación (para tracking)
+   * @param {string} options.agentName - Nombre del agente (para tracking)
+   * @param {boolean} options.includeModelIdentification - Si true, agrega identificación del modelo al final
    * @returns {Promise<Object>} Resultado de la generación
    */
   async generate(prompt, specialization, options = {}) {
@@ -43,10 +82,26 @@ class MultiModelOllamaService {
       }
 
       const data = await response.json();
+      let content = data.response;
+      
+      // Variable para el modelo anterior (definida antes del bloque condicional)
+      let previousModel = null;
+      
+      // Si se solicita identificación de modelo, agregarla al final
+      if (options.includeModelIdentification && options.conversationId && options.agentName) {
+        previousModel = this.getPreviousModel(options.conversationId, options.agentName);
+        const modelIdentification = this.generateModelIdentification(model, previousModel);
+        content += modelIdentification;
+        
+        // Guardar el modelo actual para la próxima ronda
+        this.saveModelUsage(options.conversationId, options.agentName, model);
+      }
+      
       return {
         success: true,
-        content: data.response,
-        model: data.model,
+        content: content,
+        model: model,
+        previousModel: previousModel,
         total_duration: data.total_duration,
         load_duration: data.load_duration,
         prompt_eval_count: data.prompt_eval_count,

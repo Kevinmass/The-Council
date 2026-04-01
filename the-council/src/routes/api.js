@@ -176,6 +176,35 @@ router.get('/specializations', (req, res) => {
   }
 });
 
+// GET /api/models
+router.get('/models', (req, res) => {
+  try {
+    // Retornar la distribución de modelos por especialización
+    const modelDistribution = {
+      frontend: 'qwen3:4b',
+      backend: 'gemma3:4b',
+      devops: 'qwen3:4b',
+      seguridad: 'gemma3:4b',
+      sintetizador: 'qwen3:4b'
+    };
+    
+    res.json({
+      success: true,
+      modelDistribution,
+      description: {
+        'qwen3:4b': 'Optimizado para UI/UX, infraestructura y síntesis',
+        'gemma3:4b': 'Optimizado para lógica, arquitectura y análisis de riesgos'
+      }
+    });
+  } catch (error) {
+    console.error('Error obteniendo información de modelos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error obteniendo información de modelos'
+    });
+  }
+});
+
 // POST /api/council
 router.post('/council', async (req, res) => {
   try {
@@ -257,13 +286,37 @@ router.post('/council', async (req, res) => {
         responses: []
       };
 
+      // Contexto específico de esta ronda (para pasar entre agentes)
+      let roundContext = '';
+
       // Procesar respuestas de cada agente en esta ronda
-      for (const response of roundResponses) {
+      for (let i = 0; i < roundResponses.length; i++) {
+        const response = roundResponses[i];
+        
         try {
+          // Generar prompt con contexto completo:
+          // 1. Contexto acumulado de rondas anteriores
+          // 2. Respuestas de agentes anteriores en ESTA ronda
+          const fullContext = accumulatedContext + roundContext;
+          
+          const promptWithContext = agentService.generateAgentPrompt(
+            packageInput,
+            response.agent.personality,
+            response.agent.specialization,
+            fullContext,  // Contexto completo
+            packageInput  // Input original
+          );
+          
           // Usar el servicio de múltiples modelos basado en la especialización
+          // Con identificación de modelo para tracking progresivo
           const result = await multiModelOllamaService.generate(
-            response.prompt, 
-            response.agent.specialization
+            promptWithContext, 
+            response.agent.specialization,
+            {
+              conversationId: conversationId,
+              agentName: response.agent.name,
+              includeModelIdentification: true
+            }
           );
           
           if (result.success) {
@@ -293,10 +346,9 @@ router.post('/council', async (req, res) => {
               }
             });
 
-            // Actualizar contexto acumulado para la próxima ronda
-            // Incluir el input original para evitar "teléfono descompuesto"
-            accumulatedContext += `\n\n[Ronda ${roundNumber}] Input Original: ${packageInput}\n`;
-            accumulatedContext += `Agente ${response.agent.name} (${response.agent.personality} + ${response.agent.specialization}): ${result.content}`;
+            // Agregar esta respuesta al contexto de la ronda
+            // para que el próximo agente la vea
+            roundContext += `\n\n[Agente ${response.agent.name} (${response.agent.personality} + ${response.agent.specialization})]: ${result.content}`;
           } else {
             throw new Error(result.error);
           }
@@ -307,6 +359,11 @@ router.post('/council', async (req, res) => {
             error: error.message
           });
         }
+      }
+
+      // Agregar el contexto de esta ronda al contexto acumulado
+      if (roundContext) {
+        accumulatedContext += `\n\n=== RONDA ${roundNumber} ===\n${roundContext}\n`;
       }
 
       roundResults.push(roundResult);
@@ -375,9 +432,14 @@ router.post('/council', async (req, res) => {
       console.error('[ETAPA 4] Excepción en síntesis:', error);
     }
 
+    // Verificar si hubo errores en las respuestas
+    const hasErrors = roundResults.some(round => 
+      round.responses.some(response => response.error)
+    );
+    
     // Preparar respuesta final con síntesis
     const finalResponse = {
-      success: true,
+      success: !hasErrors, // Solo success: true si no hay errores
       conversationId,
       rounds: roundsNum,
       agents: configuredAgents,
@@ -385,7 +447,10 @@ router.post('/council', async (req, res) => {
       accumulatedContext: accumulatedContext,
       synthesis: synthesisData,
       etapa: 'ETAPA 4 - Síntesis Final',
-      message: `Consejo completado: ${configuredAgents.length} agentes, ${roundsNum} rondas + síntesis final`
+      message: hasErrors 
+        ? `Consejo completado con errores: ${configuredAgents.length} agentes, ${roundsNum} rondas + síntesis final`
+        : `Consejo completado: ${configuredAgents.length} agentes, ${roundsNum} rondas + síntesis final`,
+      errors: hasErrors ? roundResults.filter(round => round.responses.some(r => r.error)).map(round => round.responses.filter(r => r.error)) : undefined
     };
 
     res.json(finalResponse);

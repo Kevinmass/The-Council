@@ -182,27 +182,71 @@ Generar una conclusión estructurada después de todas las rondas del consejo
 ✔️ El fallback garantiza que siempre haya una respuesta usable
 ✔️ Persistencia completa en base de datos
 
-🟡 ETAPA 5 — Especialización de Agentes
+🟡 ETAPA 5 — Especialización de Agentes ✅ IMPLEMENTADA
 🎯 Objetivo
 
-Agregar roles técnicos a las personalidades
+Agregar roles técnicos a las personalidades + identificación progresiva de modelos de IA
 
 ⚙️ Features
 Cada agente tiene:
 - Personalidad (optimista, pesimista, etc.)
 - Especialidad técnica (frontend, backend, devops, seguridad)
+- Modelo de IA asignado según especialización
+- Identificación de modelo al finalizar cada respuesta
 
-**Métricas de Calidad para Codeo:**
-- **Complejidad**: ¿La solución es mantenible?
-- **Performance**: ¿Considera optimizaciones?
-- **Seguridad**: ¿Identifica riesgos?
-- **Escalabilidad**: ¿Piensa en crecimiento futuro?
+**Distribución de Modelos por Especialización:**
+- **Frontend**: `qwen3:4b` - Optimizado para UI/UX y frameworks
+- **Backend**: `gemma3:4b` - Optimizado para lógica y arquitectura
+- **DevOps**: `qwen3:4b` - Optimizado para infraestructura
+- **Seguridad**: `gemma3:4b` - Optimizado para análisis de riesgos
+- **Sintetizador**: `qwen3:4b` - Optimizado para síntesis neutral
+
+**Sistema de Identificación Progresiva:**
+Cada agente, al finalizar su respuesta, identifica:
+- Modelo actual que está utilizando
+- Modelo que utilizó en la ronda anterior (si aplica)
+
+Ejemplo de salida:
+```
+[Respuesta del agente...]
+---
+[Modelo: gemma3:4b | Anterior: gemma3:4b]
+```
+
+**Métricas de Calidad por Especialización:**
+
+**Frontend:**
+- **UX/UI**: ¿La solución es intuitiva y accesible?
+- **Performance**: ¿Optimiza renderizado y carga?
+- **Mantenibilidad**: ¿El código es limpio y modular?
+- **Compatibilidad**: ¿Funciona en múltiples navegadores?
+
+**Backend:**
+- **Arquitectura**: ¿Es escalable y bien estructurada?
+- **Seguridad**: ¿Protege datos y previene ataques?
+- **Performance**: ¿Optimiza consultas y recursos?
+- **API Design**: ¿Es RESTful y bien documentada?
+
+**DevOps:**
+- **Automatización**: ¿CI/CD eficiente?
+- **Monitoreo**: ¿Logs y métricas adecuadas?
+- **Escalabilidad**: ¿Soporta crecimiento?
+- **Recuperación**: ¿Plan de disaster recovery?
+
+**Seguridad:**
+- **Vulnerabilidades**: ¿Identifica OWASP Top 10?
+- **Autenticación**: ¿Gestión segura de sesiones?
+- **Autorización**: ¿Control de acceso adecuado?
+- **Datos**: ¿Encriptación y protección?
 
 🧪 Test
 Mismo problema, agentes con distintas especialidades → enfoques diferentes
+Verificar identificación de modelos en cada respuesta
 ✅ Éxito
 
 ✔️ Especialización clara y útil
+✔️ Cada agente identifica su modelo de IA
+✔️ Se puede rastrear evolución de modelos entre rondas
 
 🟠 ETAPA 6 — Control del usuario (clave UX)
 🎯 Objetivo
@@ -361,6 +405,7 @@ npm run test:council      # Test del consejo básico
 npm run test:rondas       # Test del sistema de rondas
 npm run test:sintesis     # Test de síntesis final
 npm run test:contexto     # Test de contexto del consejo
+npm run test:identificacion  # Test de identificación de modelos (ETAPA 5)
 
 # Iniciar servidor en modo test
 npm run start:test
