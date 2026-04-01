@@ -37,7 +37,7 @@ jobs:
       - name: Wait for Ollama
         run: |
           for i in {1..30}; do
-            if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+            if curl -s http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
               echo "Ollama is ready"
               break
             fi
@@ -53,11 +53,11 @@ jobs:
 
       - name: Start server
         run: |
-          npm start &
+          HOST=127.0.0.1 npm start &
           sleep 10
           # Wait for server to be ready
           for i in {1..30}; do
-            if curl -s http://localhost:3000/api/health > /dev/null 2>&1; then
+            if curl -s http://127.0.0.1:3000/api/health > /dev/null 2>&1; then
               echo "Server is ready"
               break
             fi
@@ -67,7 +67,7 @@ jobs:
 
       - name: Run health check
         run: |
-          curl -s http://localhost:3000/api/health | jq .
+          curl -s http://127.0.0.1:3000/api/health | jq .
 
       - name: Run integration tests
         run: |

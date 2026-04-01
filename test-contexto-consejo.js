@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 async function testContextoConsejo() {
   console.log('🧪 PRUEBA - Contexto del Consejo y Evitar Teléfono Descompuesto\n');
@@ -11,7 +11,7 @@ async function testContextoConsejo() {
   console.log('   Ejecutando...\n');
 
   try {
-    const response = await fetch('http://localhost:3000/api/council', {
+    const response = await fetch('http://127.0.0.1:3000/api/council', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
