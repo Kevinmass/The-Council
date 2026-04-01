@@ -6,7 +6,14 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run test:all",
+    "test:all": "node test-council.js && node test-etapa3-rondas.js && node test-etapa4-sintesis.js && node test-contexto-consejo.js",
+    "test:council": "node test-council.js",
+    "test:rondas": "node test-etapa3-rondas.js",
+    "test:sintesis": "node test-etapa4-sintesis.js",
+    "test:contexto": "node test-contexto-consejo.js",
+    "test:ci": "npm run test:all",
+    "start:test": "PORT=3000 HOST=localhost node index.js"
   },
   "repository": {
     "type": "git",

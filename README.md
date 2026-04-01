@@ -336,3 +336,85 @@ Reutilizar configuraciones para problemas similares
 ✅ Éxito
 
 ✔️ Configuraciones reutilizables
+
+## 🚀 CI/CD con GitHub Actions
+
+Este proyecto cuenta con integración continua automatizada mediante GitHub Actions.
+
+### Configuración del Workflow
+
+El workflow está configurado en `.github/workflows/ci.yml` e incluye:
+
+- **Trigger**: Se ejecuta automáticamente en cada push a `main`/`master` y en pull requests
+- **Entorno**: Ubuntu latest con Node.js 18
+- **Ollama**: Instalación automática y descarga del modelo `gemma3:4b`
+- **Tests**: Ejecución automática de todos los tests de integración
+
+### Comandos Disponibles
+
+```bash
+# Ejecutar todos los tests
+npm test
+
+# Ejecutar tests individuales
+npm run test:council      # Test del consejo básico
+npm run test:rondas       # Test del sistema de rondas
+npm run test:sintesis     # Test de síntesis final
+npm run test:contexto     # Test de contexto del consejo
+
+# Iniciar servidor en modo test
+npm run start:test
+```
+
+### Variables de Entorno
+
+El proyecto utiliza las siguientes variables de entorno (ver `.env.example`):
+
+```bash
+# Server Configuration
+PORT=3000
+HOST=localhost
+
+# Ollama Configuration
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=gemma3:4b
+
+# Database Configuration
+DB_PATH=./data/council.db
+```
+
+### Requisitos para CI/CD
+
+1. **Ollama**: El workflow instala automáticamente Ollama en el runner
+2. **Modelos**: Se descarga automáticamente el modelo `gemma3:4b`
+3. **Puertos**: El servidor usa el puerto 3000 y Ollama el 11434
+
+### Flujo del Workflow
+
+1. Checkout del código
+2. Setup de Node.js con cache de npm
+3. Instalación de dependencias
+4. Instalación de Ollama
+5. Descarga del modelo AI
+6. Inicialización de la base de datos
+7. Inicio del servidor en background
+8. Health check del servidor
+9. Ejecución de tests de integración
+10. Limpieza de procesos
+11. Upload de resultados (si fallan)
+
+### Contribuir
+
+Al hacer un pull request, el workflow de CI se ejecutará automáticamente para validar que:
+- El código compila correctamente
+- Las dependencias se instalan sin errores
+- Los tests de integración pasan
+- El servidor inicia correctamente
+
+### Badge de Estado
+
+Puedes agregar este badge a tu README para mostrar el estado del CI:
+
+```markdown
+[![CI - Tests & Build](https://github.com/Kevinmass/The-Council/actions/workflows/ci.yml/badge.svg)](https://github.com/Kevinmass/The-Council/actions/workflows/ci.yml)
+```
