@@ -26,24 +26,42 @@ jobs:
       - name: Install Ollama
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
-          ollama serve &
-          sleep 5
 
-      - name: Pull AI models
+      - name: Start Ollama
         run: |
-          ollama pull gemma3:4b
-          ollama list
-
-      - name: Wait for Ollama
-        run: |
+          # Start Ollama in background
+          ollama serve > ollama.log 2>&1 &
+          OLLAMA_PID=$!
+          echo "Ollama PID: $OLLAMA_PID"
+          
+          # Wait for Ollama to be ready (up to 60 seconds)
           for i in {1..30}; do
             if curl -s http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
-              echo "Ollama is ready"
+              echo "✅ Ollama is ready after $((i * 2)) seconds"
               break
             fi
-            echo "Waiting for Ollama... ($i/30)"
+            echo "⏳ Waiting for Ollama... ($i/30)"
             sleep 2
           done
+          
+          # Verify Ollama is responding
+          echo "🔍 Checking Ollama status..."
+          curl -s http://127.0.0.1:11434/api/tags || echo "❌ Ollama health check failed"
+          
+          # Save PID for later
+          echo $OLLAMA_PID > ollama.pid
+
+      - name: Pull AI models
+        env:
+          OLLAMA_BASE_URL: http://127.0.0.1:11434
+        run: |
+          echo "📥 Pulling required AI models..."
+          ollama pull gemma3:4b
+          echo "✅ gemma3:4b installed"
+          ollama pull qwen3:4b
+          echo "✅ qwen3:4b installed"
+          echo "📋 Available models:"
+          ollama list
 
       - name: Initialize database
         run: |
@@ -52,6 +70,8 @@ jobs:
           echo "Database initialized"
 
       - name: Start server
+        env:
+          OLLAMA_BASE_URL: http://127.0.0.1:11434
         run: |
           # Start server in background and log output
           HOST=127.0.0.1 npm start > server.log 2>&1 &
@@ -120,6 +140,9 @@ jobs:
           if [ -f server.pid ]; then
             kill $(cat server.pid) || true
           fi
+          if [ -f ollama.pid ]; then
+            kill $(cat ollama.pid) || true
+          fi
           pkill -f "node index.js" || true
           pkill -f "ollama" || true
           echo "✅ Services stopped"
@@ -130,7 +153,9 @@ jobs:
         if: failure()
         with:
           name: server-logs
-          path: server.log
+          path: |
+            server.log
+            ollama.log
           retention-days: 7
 
       - name: Upload test results

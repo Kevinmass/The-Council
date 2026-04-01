@@ -1,0 +1,196 @@
+Run echo "🧪 Running integration tests..."
+🧪 Running integration tests...
+📋 Running test-council.js...
+🧪 Iniciando tests para ETAPA 2 - Consejo básico
+1. Verificando endpoints...
+✅ Health check: OK
+2. Listando personalidades...
+✅ Personalidades: OK
+   Disponibles: optimista, pesimista, creativo, obsesivo, neutral
+3. Listando especializaciones...
+✅ Especializaciones: OK
+   Disponibles: frontend, backend, devops, seguridad, sintetizador
+4. Probando consejo multi-agente...
+✅ Consejo multi-agente: OK
+   📋 Resultados de la ronda:
+   Ronda 1:
+     ❌ Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+     ❌ Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+5. Verificando interacción entre agentes...
+✅ Interacción detectada: FAIL
+6. Verificando historial en base de datos...
+✅ Historial: OK
+   Mensajes guardados: 10
+7. Probando validación de errores...
+✅ Validación de errores: OK
+   Error esperado: Configuración de agentes inválida
+🎉 Tests completados para ETAPA 2
+📋 Resumen de cumplimiento de ETAPA 2:
+   ✅ 2 agentes (no más todavía)
+   ✅ Ejecución secuencial (A responde, B responde usando respuesta de A)
+   ✅ Especializaciones técnicas definidas
+   ✅ Interacción real (no respuestas aisladas)
+   ✅ Validación de configuración
+📋 Running test-etapa3-rondas.js...
+🧪 PRUEBA ETAPA 3 - Sistema de Rondas
+📋 Test: Ronda única (rounds = 1)
+   Rondas: 1
+   Agentes: 2
+   Input: "¿Cómo implementarías un sistema de autenticación JWT?"
+   Ejecutando...
+   ✅ Éxito!
+   📊 Resultados:
+      - Conversación ID: 2
+      - Rondas ejecutadas: 1
+      - Agentes: 2
+      - Etapa: ETAPA 4 - Síntesis Final
+      - Mensaje: Consejo completado: 2 agentes, 1 rondas + síntesis final
+   ✅ Todas las rondas fueron ejecutadas correctamente
+      - Ronda 1: 2 respuestas
+        🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+        🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+📋 Test: Múltiples rondas (rounds = 2)
+   Rondas: 2
+   Agentes: 2
+   Input: "¿Qué enfoques alternativos hay para la autenticación?"
+   Ejecutando...
+   ✅ Éxito!
+   📊 Resultados:
+      - Conversación ID: 3
+      - Rondas ejecutadas: 2
+      - Agentes: 2
+      - Etapa: ETAPA 4 - Síntesis Final
+      - Mensaje: Consejo completado: 2 agentes, 2 rondas + síntesis final
+   ✅ Todas las rondas fueron ejecutadas correctamente
+      - Ronda 1: 2 respuestas
+        🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+        🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+      - Ronda 2: 2 respuestas
+        🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+        🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+📋 Test: Tres rondas (rounds = 3)
+   Rondas: 3
+   Agentes: 2
+   Input: "¿Qué validaciones y edge cases deberías considerar?"
+   Ejecutando...
+   ✅ Éxito!
+   📊 Resultados:
+      - Conversación ID: 4
+      - Rondas ejecutadas: 3
+      - Agentes: 2
+      - Etapa: ETAPA 4 - Síntesis Final
+      - Mensaje: Consejo completado: 2 agentes, 3 rondas + síntesis final
+   ✅ Todas las rondas fueron ejecutadas correctamente
+      - Ronda 1: 2 respuestas
+        🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+        🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+      - Ronda 2: 2 respuestas
+        🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+        🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+      - Ronda 3: 2 respuestas
+        🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+        🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+🎯 PRUEBAS DE ETAPA 3 COMPLETADAS
+📋 VALIDACIÓN DE ÉXITO ETAPA 3:
+   ✔️  Cada agente responde exactamente 1 vez por ronda
+   ✔️  El parámetro "rounds = N" controla el número de rondas
+   ✔️  El contexto se acumula entre rondas
+   ✔️  Las respuestas son coherentes y no aisladas
+   ✔️  El sistema maneja correctamente múltiples rondas (1, 2, 3+)
+📋 Running test-etapa4-sintesis.js...
+🧪 PRUEBA ETAPA 4 - Síntesis Final
+📋 Test: Síntesis básica (2 agentes, 1 ronda)
+   Rondas: 1
+   Agentes: 2
+   Input: "¿Cómo implementarías un sistema de autenticación JWT?"
+   Ejecutando...
+   ✅ Éxito!
+   📊 Resultados:
+      - Conversación ID: 5
+      - Rondas ejecutadas: 1
+      - Agentes: 2
+      - Etapa: ETAPA 4 - Síntesis Final
+      - Mensaje: Consejo completado: 2 agentes, 1 rondas + síntesis final
+   ✅ Todas las rondas fueron ejecutadas correctamente
+   ❌ Síntesis no activada o no disponible
+      Error: request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+      - Ronda 1: 2 respuestas
+        🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+        🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+📋 Test: Síntesis avanzada (2 agentes, 2 rondas)
+   Rondas: 2
+   Agentes: 2
+   Input: "¿Qué enfoques alternativos hay para la autenticación?"
+   Ejecutando...
+   ✅ Éxito!
+   📊 Resultados:
+      - Conversación ID: 6
+      - Rondas ejecutadas: 2
+      - Agentes: 2
+      - Etapa: ETAPA 4 - Síntesis Final
+      - Mensaje: Consejo completado: 2 agentes, 2 rondas + síntesis final
+   ✅ Todas las rondas fueron ejecutadas correctamente
+   ❌ Síntesis no activada o no disponible
+      Error: request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+      - Ronda 1: 2 respuestas
+        🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+        🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+      - Ronda 2: 2 respuestas
+        🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+        🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+📋 Test: Síntesis completa (2 agentes, 3 rondas)
+   Rondas: 3
+   Agentes: 2
+   Input: "¿Qué validaciones y edge cases deberías considerar?"
+   Ejecutando...
+   ✅ Éxito!
+   📊 Resultados:
+      - Conversación ID: 7
+      - Rondas ejecutadas: 3
+      - Agentes: 2
+      - Etapa: ETAPA 4 - Síntesis Final
+      - Mensaje: Consejo completado: 2 agentes, 3 rondas + síntesis final
+   ✅ Todas las rondas fueron ejecutadas correctamente
+   ❌ Síntesis no activada o no disponible
+      Error: request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+      - Ronda 1: 2 respuestas
+        🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+        🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+      - Ronda 2: 2 respuestas
+        🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+        🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+      - Ronda 3: 2 respuestas
+        🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+        🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+🎯 PRUEBAS DE ETAPA 4 COMPLETADAS
+📋 VALIDACIÓN DE ÉXITO ETAPA 4:
+   ✔️  Cada agente responde exactamente 1 vez por ronda
+   ✔️  El parámetro "rounds = N" controla el número de rondas
+   ✔️  El contexto se acumula entre rondas
+   ✔️  Las respuestas son coherentes y no aisladas
+   ✔️  La IA síntesis se ejecuta automáticamente al final
+   ✔️  La síntesis usa modelo qwen3:4b con personalidad neutral
+   ✔️  La síntesis genera resumen, puntos clave, recomendaciones y plan de acción
+   ✔️  El formato de salida incluye la sección "synthesis" estructurada
+📋 Running test-contexto-consejo.js...
+🧪 PRUEBA - Contexto del Consejo y Evitar Teléfono Descompuesto
+📋 Input Original: "¿Cómo implementarías un sistema de autenticación JWT seguro?"
+   Agentes: optimista (frontend) + pesimista (seguridad)
+   Rondas: 2
+   Ejecutando...
+✅ Éxito! Consejo completado
+🔍 ANÁLISIS DE RESPUESTAS:
+📋 RONDA 1:
+   🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+   🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+📋 RONDA 2:
+   🚨 Agente 1: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+   🚨 Agente 2: Error - request to http://localhost:11434/api/generate failed, reason: connect ECONNREFUSED ::1:11434
+📊 VALIDACIÓN GENERAL:
+   ✅ Rondas ejecutadas: 2 (Correcto)
+   ✅ Total respuestas: 4 (Correcto)
+   ✅ Contexto acumulado: No
+   ✅ Etapa: ETAPA 4 - Síntesis Final
+🎯 RESULTADO FINAL: ⚠️  PARCIAL
+🎯 PRUEBA DE CONTEXTO DEL CONSEJO COMPLETADA
+✅ All tests passed

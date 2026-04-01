@@ -2,7 +2,7 @@
 const config = {
   // Ollama configuration
   ollama: {
-    baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+    baseUrl: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434',
     model: process.env.OLLAMA_MODEL || 'gemma3:4b'
   },
   
