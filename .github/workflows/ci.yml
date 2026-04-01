@@ -53,35 +53,85 @@ jobs:
 
       - name: Start server
         run: |
-          HOST=127.0.0.1 npm start &
-          sleep 10
-          # Wait for server to be ready
-          for i in {1..30}; do
+          # Start server in background and log output
+          HOST=127.0.0.1 npm start > server.log 2>&1 &
+          SERVER_PID=$!
+          echo "Server PID: $SERVER_PID"
+          
+          # Wait for server to be ready (up to 60 seconds)
+          for i in {1..60}; do
             if curl -s http://127.0.0.1:3000/api/health > /dev/null 2>&1; then
-              echo "Server is ready"
+              echo "✅ Server is ready after $((i * 2)) seconds"
               break
             fi
-            echo "Waiting for server... ($i/30)"
+            if [ $i -eq 30 ]; then
+              echo "⚠️ Server taking longer than expected..."
+              cat server.log || true
+            fi
+            echo "⏳ Waiting for server... ($i/60)"
             sleep 2
           done
+          
+          # Verify server is responding
+          echo "🔍 Checking server health..."
+          curl -v http://127.0.0.1:3000/api/health || echo "❌ Server health check failed"
+          
+          # Save PID for later
+          echo $SERVER_PID > server.pid
 
       - name: Run health check
         run: |
-          curl -s http://127.0.0.1:3000/api/health | jq .
+          echo "🔍 Running health check..."
+          curl -s http://127.0.0.1:3000/api/health | jq . || echo "❌ Health check failed"
 
       - name: Run integration tests
         run: |
-          node test-council.js
-          node test-etapa3-rondas.js
-          node test-etapa4-sintesis.js
-          node test-contexto-consejo.js
+          echo "🧪 Running integration tests..."
+          
+          # Run tests with error handling
+          TEST_FAILED=0
+          
+          echo "📋 Running test-council.js..."
+          node test-council.js || TEST_FAILED=1
+          
+          echo "📋 Running test-etapa3-rondas.js..."
+          node test-etapa3-rondas.js || TEST_FAILED=1
+          
+          echo "📋 Running test-etapa4-sintesis.js..."
+          node test-etapa4-sintesis.js || TEST_FAILED=1
+          
+          echo "📋 Running test-contexto-consejo.js..."
+          node test-contexto-consejo.js || TEST_FAILED=1
+          
+          if [ $TEST_FAILED -eq 1 ]; then
+            echo "❌ Some tests failed"
+            echo "📄 Server logs:"
+            cat server.log || true
+          else
+            echo "✅ All tests passed"
+          fi
+          
+          exit $TEST_FAILED
         continue-on-error: true
 
       - name: Stop server
         run: |
+          echo "🛑 Stopping services..."
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+          fi
           pkill -f "node index.js" || true
           pkill -f "ollama" || true
+          echo "✅ Services stopped"
         if: always()
+
+      - name: Upload server logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: server-logs
+          path: server.log
+          retention-days: 7
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

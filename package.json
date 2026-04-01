@@ -2,10 +2,10 @@
   "name": "the-council",
   "version": "1.0.0",
   "description": "🧭 ROADMAP – “El Consejo” (Multi-Agente IA)\r 🎯 Caso de Uso Principal: Asistente de Desarrollo de Software\r 💡 El sistema está diseñado para codeo pero es extensible a cualquier dominio",
-  "main": "index.js",
+  "main": "the-council/index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js",
+    "start": "node the-council/index.js",
+    "dev": "node the-council/index.js",
     "test": "npm run test:all",
     "test:all": "node test-council.js && node test-etapa3-rondas.js && node test-etapa4-sintesis.js && node test-contexto-consejo.js",
     "test:council": "node test-council.js",
@@ -13,7 +13,7 @@
     "test:sintesis": "node test-etapa4-sintesis.js",
     "test:contexto": "node test-contexto-consejo.js",
     "test:ci": "npm run test:all",
-    "start:test": "PORT=3000 HOST=localhost node index.js"
+    "start:test": "PORT=3000 HOST=127.0.0.1 node the-council/index.js"
   },
   "repository": {
     "type": "git",
