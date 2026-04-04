@@ -30,6 +30,11 @@ class AgentService {
         description: 'Best practices, vulnerabilidades, seguridad',
         prompt: 'Eres un experto en seguridad informática. Especializado en buenas prácticas, identificación de vulnerabilidades y seguridad en desarrollo.'
       },
+      neutral: {
+        name: 'neutral',
+        description: 'Análisis objetivo sin sesgo técnico',
+        prompt: 'Eres un analista neutral y objetivo. Tu enfoque es imparcial y equilibrado, considerando todos los aspectos de manera justa sin sesgo hacia ninguna área técnica específica. Proporcionas perspectivas balanceadas y fundamentadas.'
+      },
       sintetizador: {
         name: 'sintetizador',
         description: 'Análisis objetivo y síntesis de información',
@@ -93,7 +98,11 @@ class AgentService {
     
     // Añadir especialización
     if (specialization) {
+      // Especialización predefinida
       prompt += `${specialization.prompt}\n\n`;
+    } else {
+      // Especialización personalizada - generar prompt genérico
+      prompt += `Eres un experto especializado en ${specializationName}. Aporta tu perspectiva única basada en tu experiencia en este campo específico. Tu conocimiento especializado es valioso para el consejo.\n\n`;
     }
     
     // Añadir personalidad
@@ -121,7 +130,7 @@ class AgentService {
   /**
    * Crea un agente con personalidad y especialización específicas
    * @param {string} personalityName - Nombre de la personalidad
-   * @param {string} specializationName - Nombre de la especialización
+   * @param {string} specializationName - Nombre de la especialización (puede ser predefinida o personalizada)
    * @returns {Object} Objeto agente configurado
    */
   createAgent(personalityName, specializationName) {
@@ -129,15 +138,29 @@ class AgentService {
       throw new Error(`Personalidad inválida: ${personalityName}`);
     }
     
-    if (!this.isValidSpecialization(specializationName)) {
-      throw new Error(`Especialización inválida: ${specializationName}`);
+    // Validar que la especialización no esté vacía
+    if (!specializationName || specializationName.trim() === '') {
+      throw new Error(`Especialización requerida`);
+    }
+
+    // Obtener especialización (puede ser predefinida o personalizada)
+    const specialization = this.getSpecialization(specializationName);
+    
+    // Generar descripción
+    let description;
+    if (specialization) {
+      // Especialización predefinida
+      description = `${this.personalityService.getPersonality(personalityName).description} + ${specialization.description}`;
+    } else {
+      // Especialización personalizada
+      description = `${this.personalityService.getPersonality(personalityName).description} + Especialista en ${specializationName}`;
     }
 
     return {
       personality: personalityName,
       specialization: specializationName,
       name: `${personalityName}-${specializationName}`,
-      description: `${this.personalityService.getPersonality(personalityName).description} + ${this.getSpecialization(specializationName).description}`
+      description: description
     };
   }
 
@@ -269,7 +292,7 @@ class AgentService {
   }
 
   /**
-   * Valida la configuración de agentes para una conversación
+   * Valida la configuración de agentes para una conversación (ETAPA 6)
    * @param {Array} agentConfigs - Configuraciones de agentes
    * @returns {Object} Resultado de validación
    */
@@ -277,31 +300,50 @@ class AgentService {
     const errors = [];
     const warnings = [];
     
-    // Validar que haya al menos 2 agentes (requisito de ETAPA 2)
+    // 🚀 ETAPA 6: Soporte para N agentes (ya no limitado a 2)
     if (!agentConfigs || agentConfigs.length < 2) {
       errors.push('Se requieren al menos 2 agentes para el consejo');
     }
     
-    // Validar que no haya más de 2 agentes (límite de ETAPA 2)
-    if (agentConfigs.length > 2) {
-      warnings.push('ETAPA 2 limita a 2 agentes. Considera reducir la cantidad.');
+    // Validar límite máximo (configurable, por defecto 10)
+    if (agentConfigs.length > 10) {
+      errors.push('Máximo 10 agentes permitidos para mantener performance');
     }
     
     // Validar cada agente
     agentConfigs.forEach((config, index) => {
       if (!config.personality || !this.personalityService.isValidPersonality(config.personality)) {
-        errors.push(`Agente ${index + 1}: personalidad inválida "${config.personality}"`);
+        errors.push(`Agente ${index + 1}: personalidad inválida "${config.personality}". Personalidades disponibles: ${this.personalityService.getAvailablePersonalities().join(', ')}`);
       }
       
-      if (!config.specialization || !this.isValidSpecialization(config.specialization)) {
-        errors.push(`Agente ${index + 1}: especialización inválida "${config.specialization}"`);
+      // Validar especialización - permitir especializaciones personalizadas (no están en la lista predefinida)
+      if (!config.specialization || config.specialization.trim() === '') {
+        errors.push(`Agente ${index + 1}: especialización requerida`);
+      }
+      // Si la especialización no es una de las predefinidas, se considera personalizada (válida)
+      
+      // Validar que no haya combinaciones duplicadas
+      const duplicates = agentConfigs.filter((c, i) => 
+        i !== index && 
+        c.personality === config.personality && 
+        c.specialization === config.specialization
+      );
+      
+      if (duplicates.length > 0 && index < agentConfigs.indexOf(duplicates[0])) {
+        warnings.push(`Agente ${index + 1}: Combinación duplicada "${config.personality} + ${config.specialization}"`);
       }
     });
+    
+    // Warning para configuraciones grandes
+    if (agentConfigs.length > 4) {
+      warnings.push(`Consejo grande (${agentConfigs.length} agentes). Considerá que el tiempo de procesamiento aumentará significativamente.`);
+    }
     
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
+      agentCount: agentConfigs.length
     };
   }
 

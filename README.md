@@ -248,10 +248,10 @@ Verificar identificación de modelos en cada respuesta
 ✔️ Cada agente identifica su modelo de IA
 ✔️ Se puede rastrear evolución de modelos entre rondas
 
-🟠 ETAPA 6 — Control del usuario (clave UX)
+🟠 ETAPA 6 — Control del usuario (clave UX) ✅ COMPLETADA
 🎯 Objetivo
 
-El usuario controla el proceso
+El usuario controla el proceso completamente
 
 ⚙️ Features
 
@@ -260,14 +260,28 @@ Input:
 {
   "package": "...",
   "rounds": 3,
-  "agents": 2,
-  "specializations": ["frontend", "backend"]
+  "agents": [
+    {"personality": "optimista", "specialization": "frontend"},
+    {"personality": "pesimista", "specialization": "backend"}
+  ]
 }
+
+**Novedades ETAPA 6:**
+- Soporte para N agentes (2-10)
+- Validación mejorada de parámetros
+- Endpoint unificado `/api/config` para configuración
+- Endpoint `/api/council/:id/status` para polling de progreso
+- Metadata completa en respuestas
+
 🧪 Test
-Cambiar rounds cambia output
+- Cambiar rounds cambia output
+- Agregar/eliminar agentes dinámicamente
+- Validación de límites (min 2, max 10 agentes)
 ✅ Éxito
 
 ✔️ El sistema responde dinámicamente a configuración
+✔️ Soporte para múltiples agentes (no limitado a 2)
+✔️ Validación robusta con mensajes de error descriptivos
 
 🟠 ETAPA 7 — Rotación de personalidades
 🎯 Objetivo
@@ -333,23 +347,36 @@ Output final con "veredicto"
 
 ✔️ Resultado claro y usable
 
-🔵 ETAPA 11 — Interfaz (mínima)
+🔵 ETAPA 11 — Interfaz (mínima) ✅ IMPLEMENTADA
 🎯 Objetivo
 
-Hacerlo usable
+Hacerlo usable con una interfaz visual atractiva
 
 ⚙️ Features
-UI simple:
-input package
-selector de rondas
-selector de especializaciones
-botón "continuar"
-Output por ronda
+- **Interfaz visual moderna** con Tailwind CSS
+- **Visualización de agentes** como nodos conectados (estilo atómico)
+- **Animación de "latido"** cuando un agente está pensando
+- **UI interactiva**:
+  - Input para package/problema
+  - Selector de rondas (1-10)
+  - Gestión dinámica de agentes (agregar/eliminar)
+  - Selectores de personalidad y especialización por agente
+- **Progreso en tiempo real** con polling
+- **Resultados estructurados** por ronda
+- **Síntesis final** con métricas de calidad
+- **Notificaciones toast** para feedback
+
 🧪 Test
-Usuario interactúa sin tocar código
+- Usuario interactúa sin tocar código
+- Agregar/eliminar agentes dinámicamente
+- Ver animación de latido durante procesamiento
+- Resultados se muestran correctamente
 ✅ Éxito
 
 ✔️ Flujo completo usable
+✔️ Interfaz visualmente atractiva y moderna
+✔️ Experiencia de usuario intuitiva
+✔️ Animaciones y feedback visual
 
 🔵 ETAPA 12 — Feedback del Usuario
 🎯 Objetivo
@@ -380,6 +407,21 @@ Reutilizar configuraciones para problemas similares
 ✅ Éxito
 
 ✔️ Configuraciones reutilizables
+
+## 🖥️ Interfaz Web
+
+El proyecto incluye una interfaz web moderna y atractiva disponible en `http://localhost:3000` cuando el servidor está en ejecución.
+
+### Características del Frontend
+
+- **Visualización de agentes** como nodos conectados (estilo atómico)
+- **Animación de "latido"** cuando un agente está procesando
+- **Gestión dinámica** de agentes (agregar/eliminar)
+- **Configuración flexible** de personalidades y especializaciones
+- **Progreso en tiempo real** con polling
+- **Resultados estructurados** por ronda y síntesis final
+
+Para más detalles, ver [frontend/README.md](frontend/README.md).
 
 ## 🚀 CI/CD con GitHub Actions
 

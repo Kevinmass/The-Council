@@ -205,6 +205,173 @@ router.get('/models', (req, res) => {
   }
 });
 
+// 🚀 ETAPA 6 - GET /api/config
+// Endpoint unificado para obtener toda la configuración disponible
+router.get('/config', (req, res) => {
+  try {
+    const availablePersonalities = personalityService.getAvailablePersonalities();
+    const availableSpecializations = agentService.getAvailableSpecializations();
+    
+    const personalitiesInfo = availablePersonalities.map(name => ({
+      name,
+      description: personalityService.getPersonality(name).description
+    }));
+    
+    const specializationsInfo = availableSpecializations.map(name => ({
+      name,
+      description: agentService.getSpecialization(name).description,
+      model: {
+        'frontend': 'qwen3:4b',
+        'backend': 'gemma3:4b',
+        'devops': 'qwen3:4b',
+        'seguridad': 'gemma3:4b',
+        'neutral': 'qwen3:4b',
+        'sintetizador': 'qwen3:4b'
+      }[name]
+    }));
+    
+    res.json({
+      success: true,
+      config: {
+        personalities: personalitiesInfo,
+        specializations: specializationsInfo,
+        models: {
+          'qwen3:4b': {
+            name: 'Qwen 3 4B',
+            description: 'Optimizado para UI/UX, infraestructura y síntesis',
+            provider: 'Ollama'
+          },
+          'gemma3:4b': {
+            name: 'Gemma 3 4B',
+            description: 'Optimizado para lógica, arquitectura y análisis de riesgos',
+            provider: 'Ollama'
+          }
+        },
+        limits: {
+          minAgents: 2,
+          maxAgents: 10,
+          minRounds: 1,
+          maxRounds: 10,
+          recommendedAgents: [2, 4],
+          recommendedRounds: [1, 3]
+        },
+        defaults: {
+          rounds: 2,
+          agents: [
+            { personality: 'optimista', specialization: 'frontend' },
+            { personality: 'pesimista', specialization: 'backend' }
+          ]
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error obteniendo configuración:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error obteniendo configuración del sistema'
+    });
+  }
+});
+
+// 🚀 ETAPA 6 - GET /api/council/:id/status
+// Endpoint para consultar el estado de un consejo en ejecución
+router.get('/council/:id/status', async (req, res) => {
+  try {
+    const conversationId = parseInt(req.params.id);
+    
+    if (isNaN(conversationId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID de conversación inválido'
+      });
+    }
+
+    // Obtener historial para determinar el estado
+    const history = await dbService.getConversationHistory(conversationId);
+    
+    if (!history || history.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Conversación no encontrada'
+      });
+    }
+
+    // Analizar el estado actual
+    const lastMessage = history[history.length - 1];
+    const systemMessages = history.filter(m => m.role === 'system');
+    const assistantMessages = history.filter(m => m.role === 'assistant');
+    
+    // Determinar estado basado en los mensajes
+    let status = 'unknown';
+    let currentRound = 0;
+    let totalRounds = 0;
+    let currentAgent = null;
+    let progress = 0;
+    
+    // Buscar configuración de rondas
+    const configMessage = systemMessages.find(m => 
+      m.content.includes('CONFIGURACIÓN:') || m.content.includes('Configuración del consejo')
+    );
+    
+    if (configMessage) {
+      const configMatch = configMessage.content.match(/(\d+)\s+agentes,\s*(\d+)\s+rondas/);
+      if (configMatch) {
+        totalRounds = parseInt(configMatch[2]);
+      }
+    }
+    
+    // Determinar ronda actual basada en mensajes de sistema
+    const roundMessages = systemMessages.filter(m => 
+      m.content.includes('RONDA') || m.content.includes('Ronda')
+    );
+    
+    if (roundMessages.length > 0) {
+      const lastRoundMsg = roundMessages[roundMessages.length - 1];
+      const roundMatch = lastRoundMsg.content.match(/RONDA\s*(\d+)/);
+      if (roundMatch) {
+        currentRound = parseInt(roundMatch[1]);
+      }
+    }
+    
+    // Calcular progreso
+    if (totalRounds > 0 && currentRound > 0) {
+      progress = Math.round((currentRound / totalRounds) * 100);
+    }
+    
+    // Verificar si hay síntesis
+    const synthesisMessage = assistantMessages.find(m => 
+      m.metadata && m.metadata.specialization === 'sintetizador'
+    );
+    
+    if (synthesisMessage) {
+      status = 'completed';
+      progress = 100;
+    } else if (currentRound > 0 && totalRounds > 0) {
+      status = 'in_progress';
+    } else if (history.length > 0) {
+      status = 'started';
+    }
+    
+    res.json({
+      success: true,
+      conversationId,
+      status,
+      progress,
+      currentRound,
+      totalRounds,
+      totalMessages: history.length,
+      lastActivity: lastMessage.created_at,
+      hasSynthesis: !!synthesisMessage
+    });
+  } catch (error) {
+    console.error('Error obteniendo estado del consejo:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error obteniendo estado del consejo'
+    });
+  }
+});
+
 // POST /api/council
 router.post('/council', async (req, res) => {
   try {
@@ -236,6 +403,7 @@ router.post('/council', async (req, res) => {
     // Validar agentes
     const validation = agentService.validateAgents(agents);
     if (!validation.isValid) {
+      console.error('Validación fallida:', validation.errors);
       return res.status(400).json({
         success: false,
         error: 'Configuración de agentes inválida',
@@ -437,16 +605,29 @@ router.post('/council', async (req, res) => {
       round.responses.some(response => response.error)
     );
     
-    // Preparar respuesta final con síntesis
+    // 🚀 ETAPA 6 - Preparar respuesta final con metadata de configuración
     const finalResponse = {
       success: !hasErrors, // Solo success: true si no hay errores
       conversationId,
-      rounds: roundsNum,
-      agents: configuredAgents,
+      configuration: {
+        rounds: roundsNum,
+        agents: configuredAgents.map(a => ({
+          name: a.name,
+          personality: a.personality,
+          specialization: a.specialization,
+          description: a.description
+        })),
+        totalAgents: configuredAgents.length
+      },
       results: roundResults,
       accumulatedContext: accumulatedContext,
       synthesis: synthesisData,
-      etapa: 'ETAPA 4 - Síntesis Final',
+      metadata: {
+        stage: 'ETAPA 6 - Control del Usuario',
+        executionTime: new Date().toISOString(),
+        hasErrors,
+        warnings: validation ? validation.warnings : []
+      },
       message: hasErrors 
         ? `Consejo completado con errores: ${configuredAgents.length} agentes, ${roundsNum} rondas + síntesis final`
         : `Consejo completado: ${configuredAgents.length} agentes, ${roundsNum} rondas + síntesis final`,

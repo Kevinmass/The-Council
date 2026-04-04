@@ -10,48 +10,69 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// 🚀 ETAPA 11 - Servir archivos estáticos del frontend
+app.use(express.static('frontend'));
+
 // Rutas API
 app.use('/api', apiRoutes);
 
 // Ruta principal
 app.get('/', (req, res) => {
   res.json({
-    message: '🚀 El Consejo - Multi-Agente IA',
-    version: '1.0.0',
+    message: '🚀 The Council - Multi-Agent AI',
+    version: '2.1.0',
     endpoints: {
       'POST /api/generate': 'Generar respuesta con Ollama (soporta personalidades)',
-      'POST /api/council': 'Consejo multi-agente (ETAPA 2 - 2 agentes secuenciales)',
-      'GET /api/council-test': 'Prueba rápida del consejo multi-agente (¿Es la tierra plana?)',
+      'POST /api/council': 'Consejo multi-agente (ETAPA 6 - hasta 10 agentes)',
+      'GET /api/config': 'Obtener configuración completa (personalidades, especializaciones, límites)',
+      'GET /api/council/:id/status': 'Consultar estado de un consejo en ejecución',
+      'GET /api/council-test': 'Prueba rápida del consejo multi-agente',
       'GET /api/health': 'Verificar estado del sistema',
       'GET /api/conversations/:id/history': 'Obtener historial de conversación',
       'GET /api/personalities': 'Listar personalidades disponibles',
       'GET /api/specializations': 'Listar especializaciones técnicas disponibles',
+      'GET /api/models': 'Obtener información de modelos de IA',
       'GET /api/hello': 'Saludo rápido con personalidad predefinida (optimista)'
     },
     roadmap: {
-      etapa: 'ETAPA 4 - Síntesis Final',
-      objetivo: 'Generar una conclusión estructurada después de todas las rondas del consejo'
+      completedStages: [
+        'ETAPA 3 - Sistema de Rondas',
+        'ETAPA 4 - Síntesis Final',
+        'ETAPA 5 - Especialización de Agentes',
+        'ETAPA 6 - Control del Usuario',
+        'ETAPA 11 - Interfaz Visual'
+      ],
+      currentStage: 'ETAPA 6 - Control del Usuario + ETAPA 11 - Interfaz',
+      next: 'ETAPA 7 - Rotación de Personalidades'
     },
-    personalidades: [
-      'optimista - Enfoque positivo y constructivo',
-      'pesimista - Enfoque crítico y preventivo', 
-      'creativo - Enfoque innovador y fuera de lo común',
-      'obsesivo - Enfoque detallado y exhaustivo'
-    ],
-    especializaciones: [
-      'frontend - UI/UX, frameworks, interfaces de usuario',
-      'backend - APIs, bases de datos, arquitectura',
-      'devops - Deploy, CI/CD, performance, infraestructura',
-      'seguridad - Best practices, vulnerabilidades, seguridad',
-      'sintetizador - Análisis objetivo y síntesis de información'
-    ],
+    features: {
+      maxAgents: 10,
+      minAgents: 2,
+      maxRounds: 10,
+      minRounds: 1,
+      personalidades: [
+        'optimista - Enfoque positivo y constructivo',
+        'pesimista - Enfoque crítico y preventivo', 
+        'creativo - Enfoque innovador y fuera de lo común',
+        'obsesivo - Enfoque detallado y exhaustivo'
+      ],
+      especializaciones: [
+        'frontend - UI/UX, frameworks, interfaces de usuario',
+        'backend - APIs, bases de datos, arquitectura',
+        'devops - Deploy, CI/CD, performance, infraestructura',
+        'seguridad - Best practices, vulnerabilidades, seguridad',
+        'sintetizador - Análisis objetivo y síntesis de información'
+      ],
+      frontend: 'http://localhost:3000 (interfaz visual disponible)'
+    },
     ejemplo_consejo: {
       input: 'quiero una app de delivery con drones',
       agentes: [
-        { personalidad: 'optimista', especializacion: 'frontend' },
-        { personalidad: 'pesimista', especializacion: 'backend' }
+        { personality: 'optimista', specialization: 'frontend' },
+        { personality: 'pesimista', specialization: 'backend' },
+        { personality: 'creativo', specialization: 'devops' }
       ],
-      rondas: 1
+      rounds: 2
     }
   });
 });
