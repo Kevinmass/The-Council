@@ -1,0 +1,28 @@
+# Node
+**/node_modules
+**/dist
+npm-debug.log*
+
+# VCS / CI
+.git
+.github
+.gitignore
+
+# No entran a la imagen
+tests
+docs
+data
+*.md
+.env
+.env.*
+!.env.example
+Dockerfile
+.dockerignore
+docker-compose.yml
+frontend/README.md
+
+# Editores / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db

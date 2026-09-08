@@ -410,18 +410,90 @@ Reutilizar configuraciones para problemas similares
 
 ## 🖥️ Interfaz Web
 
-El proyecto incluye una interfaz web moderna y atractiva disponible en `http://localhost:3000` cuando el servidor está en ejecución.
+SPA en **React + Vite** (`frontend/`), servida por Express desde `frontend/dist`:
 
-### Características del Frontend
+- **`/`** — landing formal: hero, qué es, cómo funciona, roles, roadmap, CTA.
+- **`/app`** — la herramienta: configurás el problema y el panel de agentes, corrés el
+  consejo y ves la deliberación por ronda + la síntesis final con métrica de calidad.
 
-- **Visualización de agentes** como nodos conectados (estilo atómico)
-- **Animación de "latido"** cuando un agente está procesando
-- **Gestión dinámica** de agentes (agregar/eliminar)
-- **Configuración flexible** de personalidades y especializaciones
-- **Progreso en tiempo real** con polling
-- **Resultados estructurados** por ronda y síntesis final
+Estética "dark premium": fondo WebGL (Aurora, adaptado de [reactbits.dev](https://reactbits.dev)
++ `ogl`), tipografía protagonista (Instrument Serif + Geist), acento de oro contenido.
+Muestra un badge de **modo simulado** cuando no hay Ollama. Detalles en
+[frontend/README.md](frontend/README.md).
 
-Para más detalles, ver [frontend/README.md](frontend/README.md).
+## ▶️ Cómo se ejecuta
+
+El proyecto corre **100 % local** con Node.js. No requiere Docker (pero se puede, ver abajo).
+
+```bash
+# 1. Backend
+npm install
+npm start                     # http://localhost:3000  (entry: src/index.js)
+
+# 2. Frontend — build una vez y lo sirve el backend en /
+npm run frontend:install
+npm run frontend:build        # genera frontend/dist
+
+# …o, para iterar el frontend con hot-reload (otra terminal):
+npm run frontend:dev          # http://localhost:5173  (proxya /api al backend)
+```
+
+Las respuestas de los agentes las genera **Ollama** (local, en `http://127.0.0.1:11434`)
+con los modelos `qwen3:4b` y `gemma3:4b`. Ver [Modo offline](#-modo-offline-sin-ollama)
+si todavía no lo tenés instalado.
+
+Estructura:
+
+```
+src/         código del servidor Express (index.js, app.js, config.js, routes/, services/)
+frontend/    SPA React + Vite (build en frontend/dist, servido por Express en /)
+tests/       scripts de integración
+docs/        documentación y notas de diseño
+data/        base SQLite (se crea sola)
+```
+
+## 🔌 Modo offline (sin Ollama)
+
+Se puede levantar y usar todo el flujo **sin Ollama corriendo ni modelos descargados**.
+Sirve para trabajar el frontend en un equipo nuevo.
+
+| Variable | Default | Efecto |
+|---|---|---|
+| `MOCK_LLM` | `false` | `true` → nunca contacta a Ollama, responde siempre simulado |
+| `LLM_FALLBACK_MOCK` | `true` | si Ollama no responde o el modelo no está instalado, responde simulado en vez de fallar |
+
+Con los valores por defecto, `npm start` ya funciona sin Ollama: `/api/council` y
+`/api/generate` devuelven respuestas simuladas deterministas (marcadas con `mock: true`
+en la respuesta, y `mode: "mock-fallback"` en `GET /api/health`). En cuanto se inicia
+Ollama con los modelos, se vuelven a usar respuestas reales automáticamente.
+
+```bash
+npm run start:mock                 # fuerza modo simulado (multiplataforma)
+# o:
+MOCK_LLM=true npm start            # bash
+$env:MOCK_LLM='true'; npm start    # PowerShell
+```
+
+## 🐳 Docker
+
+La imagen **compila el frontend adentro** (stage Vite), así que un solo `docker compose up`
+sirve landing + app ya construidas.
+
+```bash
+# App sola, modo simulado — no necesita Ollama:
+docker compose up --build
+#   -> http://localhost:3000
+
+# App + Ollama real:
+docker compose --profile full up --build -d
+docker compose --profile full --profile setup run --rm pull-models   # baja los modelos (1 vez)
+```
+
+- `Dockerfile`: build multi-stage sobre `node:22-bookworm-slim` — un stage compila `sqlite3`
+  desde el código, otro corre `vite build`, y la imagen final (sin toolchain, usuario no-root)
+  solo lleva `node_modules` + `src` + `frontend/dist`. `HEALTHCHECK` contra `/api/health`.
+- La base SQLite persiste en el volumen `council-data`; los modelos de Ollama en `ollama-models`.
+- Variables (`MOCK_LLM`, `LLM_FALLBACK_MOCK`, `OLLAMA_BASE_URL`, …) se pueden pasar por `.env` o entorno: `MOCK_LLM=true docker compose up`.
 
 ## 🚀 CI/CD con GitHub Actions
 

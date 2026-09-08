@@ -1,114 +1,57 @@
-# 🎨 Frontend - El Consejo
+# Frontend — The Council
 
-Interfaz visual moderna para el sistema multi-agente de IA "El Consejo".
+SPA en **React + Vite**. Dos vistas:
 
-## 🚀 Características
+- `/` — landing (hero, explicación, cómo funciona, roles, roadmap, CTA)
+- `/app` — la herramienta del consejo (configurar agentes, correr, ver síntesis)
 
-- **Interfaz visual atractiva** con Tailwind CSS
-- **Visualización de agentes** como nodos conectados (estilo atómico)
-- **Animación de "latido"** cuando un agente está procesando
-- **Gestión dinámica de agentes** - agregar/eliminar en tiempo real
-- **Configuración flexible** de personalidades y especializaciones
-- **Progreso en tiempo real** con polling automático
-- **Resultados estructurados** por ronda
-- **Síntesis final** con métricas de calidad
-- **Notificaciones toast** para feedback al usuario
+Estética "dark premium": fondo WebGL (Aurora, vía [reactbits.dev](https://reactbits.dev) +
+[`ogl`](https://github.com/oframe/ogl)), tipografía protagonista (Instrument Serif + Geist),
+acento de oro contenido.
 
-## 📁 Estructura
+## Desarrollo
 
-```
-frontend/
-├── index.html          # Página principal
-├── css/
-│   └── custom.css      # Estilos personalizados y animaciones
-├── js/
-│   ├── config.js       # Configuración global
-│   ├── agents.js       # Gestión de agentes
-│   ├── api.js          # Comunicación con backend
-│   └── app.js          # Lógica principal de la aplicación
-└── README.md           # Esta documentación
+```bash
+npm install          # una vez
+npm run dev          # http://localhost:5173  (proxya /api -> http://127.0.0.1:3000)
 ```
 
-## 🛠️ Tecnologías
+Necesitás el backend Express corriendo aparte (`npm start` desde la raíz). Con `MOCK_LLM`
+o el fallback por defecto, no hace falta Ollama.
 
-- **HTML5** - Estructura semántica
-- **Tailwind CSS** - Estilos utilitarios
-- **Vanilla JavaScript** - Sin frameworks pesados
-- **Google Fonts** - Inter & Playfair Display
-- **SVG dinámico** - Conexiones entre agentes
+```bash
+npm run build        # genera dist/  (lo sirve Express en producción)
+npm run preview      # sirve dist/ localmente para verificar el build
+```
 
-## 🎯 Uso
+Desde la raíz del repo también: `npm run frontend:dev`, `npm run frontend:build`.
 
-1. **Iniciar el servidor backend**:
-   ```bash
-   npm start
-   ```
+## Estructura
 
-2. **Abrir el navegador** en `http://localhost:3000`
+```
+src/
+├── main.jsx                 raíz React + BrowserRouter
+├── App.jsx                  rutas (/ y /app)
+├── index.css                Tailwind + tokens + componentes base
+├── pages/                   Landing.jsx · Council.jsx
+├── components/
+│   ├── reactbits/           Aurora, SplitText, CountUp, ShinyText,
+│   │                        SpotlightCard, TiltedCard, Magnetic
+│   ├── common/              Reveal
+│   ├── site/                Navbar (minimal), LineSidebar (scroll-spy de secciones),
+│   │                        Footer, Logo, Backdrop, CouncilDiagram,
+│   │                        sections/ (Hero, WhatIsIt, HowItWorks, Roles, Roadmap, CTA)
+│   └── council/             ProblemField, RoundsSlider, AgentRail/AgentCard,
+│                            RunProgress, Results, Synthesis, QualityMeter, ModeBadge
+├── hooks/useCouncil.js      estado + orquestación de la llamada a /api/council
+└── lib/                     api.js (fetch a /api/*) · catalog.js (fallback estático) ·
+                             richtext.jsx (render seguro de markdown ligero)
+```
 
-3. **Configurar el consejo**:
-   - Ingresar el problema/proyecto en el textarea
-   - Seleccionar número de rondas (1-10)
-   - Agregar/eliminar agentes con el botón +
-   - Configurar personalidad y especialización por agente
+## Notas
 
-4. **Iniciar consejo** haciendo click en "Iniciar Consejo"
-
-5. **Ver resultados**:
-   - Progreso en tiempo real
-   - Respuestas por ronda
-   - Síntesis final estructurada
-
-## 🎨 Diseño
-
-### Colores por Especialización
-
-- **Frontend**: 🟣 Púrpura (#667eea)
-- **Backend**: 🩷 Rosa (#f5576c)
-- **DevOps**: 🔵 Azul (#4facfe)
-- **Seguridad**: 🟢 Verde (#43e97b)
-
-### Animaciones
-
-- **Latido (heartbeat)**: Cuando un agente está procesando
-- **Fade in up**: Al cargar elementos
-- **Flow line**: En las conexiones entre agentes
-
-## 📱 Responsive
-
-El diseño es completamente responsive y se adapta a:
-- Desktop (1920px+)
-- Tablet (768px - 1920px)
-- Mobile (< 768px)
-
-## 🔌 Integración con Backend
-
-El frontend se comunica con los siguientes endpoints:
-
-- `GET /api/config` - Obtener configuración
-- `POST /api/council` - Iniciar consejo
-- `GET /api/council/:id/status` - Consultar estado
-
-## 🧪 Desarrollo
-
-Para modificar el frontend:
-
-1. Los archivos están en `frontend/`
-2. Tailwind CSS se carga via CDN (producción)
-3. Los estilos personalizados están en `css/custom.css`
-4. La lógica está modularizada en `js/`
-
-## 📝 Notas
-
-- El frontend es completamente standalone
-- No requiere build process (todo es vanilla JS + Tailwind CDN)
-- Se sirve estáticamente desde Express
-- Compatible con navegadores modernos
-
-## 🚀 Futuras Mejoras
-
-- [ ] Soporte para modo oscuro/claro
-- [ ] Exportar resultados a PDF/Markdown
-- [ ] Historial de consejos anteriores
-- [ ] Guardar configuraciones favoritas
-- [ ] Gráficos de métricas de rendimiento
+- Los componentes de `reactbits/` están adaptados de reactbits.dev (MIT), reescritos para
+  este proyecto y sin framer-motion (GSAP + rAF + CSS).
+- El fondo respeta `prefers-reduced-motion` (Aurora se congela, las animaciones de texto
+  aparecen sin stagger).
+- Tailwind v3 vía PostCSS. Sin CSS-in-JS.

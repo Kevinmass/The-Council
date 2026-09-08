@@ -1,0 +1,66 @@
+# The Council — orquestación local
+#
+# Uso rápido (sin Ollama, respuestas simuladas — ideal para trabajar el frontend):
+#   docker compose up --build
+#   -> http://localhost:3000   (mode: "mock-fallback")
+#
+# Con Ollama real (perfil "full"):
+#   docker compose --profile full up --build -d
+#   docker compose --profile full --profile setup run --rm pull-models   # descarga los modelos (una vez)
+#
+# Forzar modo simulado aunque Ollama esté arriba:  MOCK_LLM=true docker compose up
+
+services:
+  app:
+    build: .
+    image: the-council:local
+    ports:
+      - "3000:3000"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:4b}
+      # MOCK_LLM=true  -> nunca contacta Ollama. Vacío/false -> intenta Ollama y,
+      # si no está, cae a respuestas simuladas (LLM_FALLBACK_MOCK).
+      MOCK_LLM: ${MOCK_LLM:-false}
+      LLM_FALLBACK_MOCK: ${LLM_FALLBACK_MOCK:-true}
+      DB_PATH: /app/data/council.db
+    volumes:
+      - council-data:/app/data
+    restart: unless-stopped
+
+  # Ollama solo se levanta con --profile full (o --profile ollama)
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["full", "ollama"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+    # GPU NVIDIA (opcional): descomentar y tener el NVIDIA Container Toolkit
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # Descarga de modelos, un solo uso (requiere el servicio ollama arriba):
+  #   docker compose --profile full --profile setup run --rm pull-models
+  pull-models:
+    image: ollama/ollama:latest
+    profiles: ["setup"]
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["ollama pull qwen3:4b && ollama pull gemma3:4b"]
+    restart: "no"
+
+volumes:
+  council-data:
+  ollama-models:

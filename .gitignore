@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+# los package-lock.json (raíz y frontend/) SÍ se versionan — Docker usa `npm ci`
 
 # Environment variables
 .env
@@ -45,7 +45,6 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
-result.txt
 
 # Ollama
 .ollama/
