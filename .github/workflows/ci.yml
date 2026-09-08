@@ -17,11 +17,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: npm ci
+
+      - name: Build frontend (Vite -> frontend/dist)
+        run: |
+          npm --prefix frontend ci
+          npm --prefix frontend run build
 
       - name: Initialize database
         run: |
@@ -67,7 +72,7 @@ jobs:
           if [ -f server.pid ]; then
             kill $(cat server.pid) || true
           fi
-          pkill -f "node index.js" || true
+          pkill -f "src/index.js" || true
           echo "✅ Server stopped"
         if: always()
 
@@ -85,6 +90,5 @@ jobs:
         with:
           name: test-results
           path: |
-            result.txt
             *.log
           retention-days: 7
